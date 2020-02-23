@@ -19,9 +19,9 @@ This project is an Objective-C category that generates rich text by reading Mark
 
 Objective-C was chosen for this project because it is extending code written in the same language. It was a more natural fit.
 
-Swift is fully supported, both on iOS and macOS. You'll find sample apps in both languages and for all Apple platforms including macOS (AppKit) and iOS (UIKit).
+Swift is fully supported. You'll find sample apps in both languages and for all Apple platforms including macOS ([AppKit](AppKit/SampleApp)) and iOS ([UIKit/Objective-C](UIKit/SampleApp) and ([UIKit/Swift](UIKit/SwiftSampleApp))).
 
-The macOS sample app also includes a full suite of tests that check the Markdown parser (for both reading and writing). If you want to add additional Markdown support in this code, familiarize yourself with these tests first.
+The macOS sample app also includes a full suite of tests that check the Markdown parser (for both reading and writing). If you want to add additional Markdown support in this code, familiarize yourself with these tests first. This sample app also makes a good test bed and its `ViewController` `-textDidChange` method logs strings that can be used to generate tests.
 
 ## How?
 
