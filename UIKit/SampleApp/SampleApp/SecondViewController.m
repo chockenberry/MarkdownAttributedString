@@ -128,8 +128,12 @@
 
 - (NSAttributedString *)attributedStringConvertedToMarkdown:(NSAttributedString *)attributedString
 {
+	UIFont *systemFont = [UIFont systemFontOfSize:18.0];
+	UIFontDescriptor *fontDescriptor = [systemFont.fontDescriptor fontDescriptorWithDesign:UIFontDescriptorSystemDesignMonospaced];
+	UIFont *systemMonospacedFont = [UIFont fontWithDescriptor:fontDescriptor size:systemFont.pointSize];
+
 	NSString *string = [attributedString markdownRepresentation];
-	NSDictionary<NSAttributedStringKey,id> *attributes = @{ NSFontAttributeName: [UIFont systemFontOfSize:18.0], NSForegroundColorAttributeName: UIColor.labelColor };
+	NSDictionary<NSAttributedStringKey,id> *attributes = @{ NSFontAttributeName: systemMonospacedFont, NSForegroundColorAttributeName: UIColor.labelColor };
 	return [[NSAttributedString alloc] initWithString:string attributes:attributes];
 }
 
