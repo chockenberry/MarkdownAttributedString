@@ -15,9 +15,11 @@ Additionally, with the advent of system fonts that can't be used in TextEdit to 
 
 ## What?
 
-This project is an Objective-C category that generates rich text by reading Markdown as the source code. It also allows you to write Markdown using attributed strings.
+This project is an Objective-C category that generates rich text by reading Markdown as the source code. It also allows you to write Markdown using attributed strings. The code only processes link and emphasis span elements in Markdown. There is experimental support for code spans.
 
-Objective-C was chosen for this project because it is extending code written in the same language. It was a more natural fit.
+There is no support for Markdown block elements such as headers and lists, although care taken to leave those elements alone. In theory it would be possible to achieve something reasonable using paragraph styles, but I'm not convinced there's a need for these elements and the added complexity they would bring.
+
+The code is written in Objective-C because it is extending code written in the same language. It was a more natural fit.
 
 Swift is fully supported. You'll find sample apps in both languages for macOS ([AppKit/Objective-C](AppKit/SampleApp)) and iOS ([UIKit/Objective-C](UIKit/SampleApp) and [UIKit/Swift](UIKit/SwiftSampleApp))).
 
