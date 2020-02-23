@@ -48,6 +48,8 @@
 	self.textView.attributedText = StringData.sharedStringData.attributedString;
 	
 	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stringDataDidChange:) name:StringDataDidChangeNotification object:nil];
+	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(keyboardDidShow:) name:UIKeyboardDidShowNotification object:nil];
+	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -57,6 +59,8 @@
 
 	StringData.sharedStringData.attributedString = self.textView.attributedText;
 }
+
+#pragma mark - Actions
 
 - (IBAction)setExamples:(id)sender
 {
@@ -70,10 +74,29 @@
 	StringData.sharedStringData.attributedString = [attributedString copy];
 }
 
+- (IBAction)dismissKeyboard:(id)sender
+{
+	[self.textView resignFirstResponder];
+}
+
+#pragma mark - Notifications
+
 - (void)stringDataDidChange:(NSNotification *)notification
 {
 	NSLog(@"%s called", __PRETTY_FUNCTION__);
 	self.textView.attributedText = StringData.sharedStringData.attributedString;
+}
+
+- (void)keyboardDidShow:(NSNotification *)notification
+{
+	CGSize keyboardSize = [[[notification userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+	CGFloat bottomInset = keyboardSize.height - self.view.safeAreaInsets.bottom;
+	self.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, bottomInset, 0);
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification
+{
+	self.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 0, 0);
 }
 
 @end

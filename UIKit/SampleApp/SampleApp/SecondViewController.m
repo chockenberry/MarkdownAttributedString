@@ -54,6 +54,8 @@
 	self.textView.attributedText = [self attributedStringConvertedToMarkdown:attributedString];
 
 	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stringDataDidChange:) name:StringDataDidChangeNotification object:nil];
+	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(keyboardDidShow:) name:UIKeyboardDidShowNotification object:nil];
+	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -99,14 +101,7 @@
 	};
 }
 
-#pragma mark - Utility
-
-- (NSAttributedString *)attributedStringConvertedToMarkdown:(NSAttributedString *)attributedString
-{
-	NSString *string = [attributedString markdownRepresentation];
-	NSDictionary<NSAttributedStringKey,id> *attributes = @{ NSFontAttributeName: [UIFont systemFontOfSize:18.0], NSForegroundColorAttributeName: UIColor.labelColor };
-	return [[NSAttributedString alloc] initWithString:string attributes:attributes];
-}
+#pragma mark - Actions
 
 - (IBAction)setExamples:(id)sender
 {
@@ -124,12 +119,40 @@
 	StringData.sharedStringData.attributedString = attributedString;
 }
 
+- (IBAction)dismissKeyboard:(id)sender
+{
+	[self.textView resignFirstResponder];
+}
+
+#pragma mark - Utility
+
+- (NSAttributedString *)attributedStringConvertedToMarkdown:(NSAttributedString *)attributedString
+{
+	NSString *string = [attributedString markdownRepresentation];
+	NSDictionary<NSAttributedStringKey,id> *attributes = @{ NSFontAttributeName: [UIFont systemFontOfSize:18.0], NSForegroundColorAttributeName: UIColor.labelColor };
+	return [[NSAttributedString alloc] initWithString:string attributes:attributes];
+}
+
+#pragma mark - Notifications
+
 - (void)stringDataDidChange:(NSNotification *)notification
 {
 	NSLog(@"%s called", __PRETTY_FUNCTION__);
 	
 	NSAttributedString *attributedString = StringData.sharedStringData.attributedString;
 	self.textView.attributedText = [self attributedStringConvertedToMarkdown:attributedString];
+}
+
+- (void)keyboardDidShow:(NSNotification *)notification
+{
+	CGSize keyboardSize = [[[notification userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+	CGFloat bottomInset = keyboardSize.height - self.view.safeAreaInsets.bottom;
+	self.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, bottomInset, 0);
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification
+{
+	self.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 0, 0);
 }
 
 @end

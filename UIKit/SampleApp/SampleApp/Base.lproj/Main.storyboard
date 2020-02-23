@@ -29,12 +29,12 @@
                                     <action selector="setExamples:" destination="9pv-A4-QxB" eventType="touchUpInside" id="zaH-gb-z6w"/>
                                 </connections>
                             </button>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" usesAttributedText="YES" allowsEditingTextAttributes="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l1Q-fA-ky1">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" usesAttributedText="YES" allowsEditingTextAttributes="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l1Q-fA-ky1">
                                 <rect key="frame" x="0.0" y="164" width="414" height="628.5"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                 <attributedString key="attributedText">
                                     <fragment>
-                                        <string key="content">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
+                                        <string key="content">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</string>
                                         <attributes>
                                             <color key="NSColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
                                             <font key="NSFont" metaFont="system" size="14"/>
@@ -49,6 +49,13 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XsC-ah-IJj">
+                                <rect key="frame" x="366" y="114.5" width="28" height="23"/>
+                                <state key="normal" image="keyboard.chevron.compact.down" catalog="system"/>
+                                <connections>
+                                    <action selector="dismissKeyboard:" destination="9pv-A4-QxB" eventType="touchUpInside" id="BSX-J5-dCA"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
@@ -60,9 +67,11 @@
                             <constraint firstItem="VZY-RE-bph" firstAttribute="top" secondItem="KQZ-1w-vlD" secondAttribute="bottom" constant="20" id="Q4Q-Er-BvO"/>
                             <constraint firstItem="nfz-fe-kCh" firstAttribute="top" secondItem="l1Q-fA-ky1" secondAttribute="bottom" id="R0x-cR-X8z"/>
                             <constraint firstItem="l1Q-fA-ky1" firstAttribute="trailing" secondItem="PQr-Ze-W5v" secondAttribute="trailing" id="URc-JX-T6a"/>
+                            <constraint firstItem="XsC-ah-IJj" firstAttribute="centerY" secondItem="VZY-RE-bph" secondAttribute="centerY" id="cDu-iu-PgK"/>
                             <constraint firstItem="l1Q-fA-ky1" firstAttribute="top" secondItem="VZY-RE-bph" secondAttribute="bottom" constant="20" id="fjL-ud-Vhi"/>
                             <constraint firstItem="l1Q-fA-ky1" firstAttribute="leading" secondItem="PQr-Ze-W5v" secondAttribute="leading" id="imB-zG-Aiw"/>
                             <constraint firstItem="PQr-Ze-W5v" firstAttribute="bottom" secondItem="nfz-fe-kCh" secondAttribute="bottom" id="qgh-La-Jua"/>
+                            <constraint firstItem="PQr-Ze-W5v" firstAttribute="trailing" secondItem="XsC-ah-IJj" secondAttribute="trailing" constant="20" id="qzx-Bx-6an"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="PQr-Ze-W5v"/>
                     </view>
@@ -101,12 +110,12 @@
                                     <action selector="setRichTextExamples:" destination="9pv-A4-QxB" eventType="touchUpInside" id="OZZ-nE-U5d"/>
                                 </connections>
                             </button>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" usesAttributedText="YES" allowsEditingTextAttributes="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g3v-v8-lhZ">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" usesAttributedText="YES" allowsEditingTextAttributes="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g3v-v8-lhZ">
                                 <rect key="frame" x="0.0" y="164" width="414" height="628.5"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                 <attributedString key="attributedText">
                                     <fragment>
-                                        <string key="content">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
+                                        <string key="content">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</string>
                                         <attributes>
                                             <color key="NSColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
                                             <font key="NSFont" metaFont="system" size="14"/>
@@ -121,10 +130,17 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DsH-aX-f82">
+                                <rect key="frame" x="366" y="114.5" width="28" height="23"/>
+                                <state key="normal" image="keyboard.chevron.compact.down" catalog="system"/>
+                                <connections>
+                                    <action selector="dismissKeyboard:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="pa3-ah-X74"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
-                            <constraint firstItem="O1u-W8-tvY" firstAttribute="bottom" secondItem="0Xq-Hi-2Tj" secondAttribute="bottom" id="2KW-h5-9T3"/>
+                            <constraint firstItem="0Xq-Hi-2Tj" firstAttribute="bottom" secondItem="O1u-W8-tvY" secondAttribute="bottom" id="2KW-h5-9T3"/>
                             <constraint firstItem="XWU-Ud-NoM" firstAttribute="centerX" secondItem="X8N-mH-P2d" secondAttribute="centerX" id="4xM-bA-Auf"/>
                             <constraint firstItem="0Xq-Hi-2Tj" firstAttribute="top" secondItem="g3v-v8-lhZ" secondAttribute="bottom" id="GnZ-Lk-uJm"/>
                             <constraint firstItem="0Xq-Hi-2Tj" firstAttribute="leading" secondItem="O1u-W8-tvY" secondAttribute="leading" id="IYZ-h6-g6z"/>
@@ -133,8 +149,10 @@
                             <constraint firstItem="g3v-v8-lhZ" firstAttribute="leading" secondItem="O1u-W8-tvY" secondAttribute="leading" id="T0a-vn-fxQ"/>
                             <constraint firstItem="XWU-Ud-NoM" firstAttribute="top" secondItem="X8N-mH-P2d" secondAttribute="bottom" constant="20" id="VM7-IS-Wg0"/>
                             <constraint firstItem="g3v-v8-lhZ" firstAttribute="trailing" secondItem="O1u-W8-tvY" secondAttribute="trailing" id="VSR-mC-aFj"/>
+                            <constraint firstItem="O1u-W8-tvY" firstAttribute="trailing" secondItem="DsH-aX-f82" secondAttribute="trailing" constant="20" id="X7Z-KG-lQU"/>
                             <constraint firstItem="g3v-v8-lhZ" firstAttribute="top" secondItem="XWU-Ud-NoM" secondAttribute="bottom" constant="20" id="XCd-Wg-e5M"/>
                             <constraint firstItem="O1u-W8-tvY" firstAttribute="trailing" secondItem="0Xq-Hi-2Tj" secondAttribute="trailing" id="aJD-rE-rVQ"/>
+                            <constraint firstItem="DsH-aX-f82" firstAttribute="centerY" secondItem="XWU-Ud-NoM" secondAttribute="centerY" id="azY-ra-GMI"/>
                             <constraint firstItem="XWU-Ud-NoM" firstAttribute="top" secondItem="X8N-mH-P2d" secondAttribute="bottom" constant="20" id="kdm-Pv-eMY"/>
                             <constraint firstItem="g3v-v8-lhZ" firstAttribute="top" secondItem="XWU-Ud-NoM" secondAttribute="bottom" constant="20" id="nrA-5H-Qvz"/>
                             <constraint firstItem="XWU-Ud-NoM" firstAttribute="centerX" secondItem="O1u-W8-tvY" secondAttribute="centerX" id="z0M-pC-JIz"/>
@@ -151,7 +169,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4Nw-L8-lE0" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="750" y="360"/>
+            <point key="canvasLocation" x="749.27536231884062" y="359.59821428571428"/>
         </scene>
         <!--Tab Bar Controller-->
         <scene sceneID="yl2-sM-qoP">
@@ -174,6 +192,7 @@
     </scenes>
     <resources>
         <image name="first" width="30" height="30"/>
+        <image name="keyboard.chevron.compact.down" catalog="system" width="64" height="44"/>
         <image name="second" width="30" height="30"/>
     </resources>
 </document>
