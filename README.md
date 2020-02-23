@@ -35,11 +35,11 @@ let markdownString = "This is a **_simple_ example** that _shows_ **Markdown** u
 myLabel.attributedText = NSAttributedString(markdownRepresentation: markdownString, attributes: [.font : UIFont.systemFont(ofSize: 17.0), .foregroundColor: UIColor.systemPurple ])
 ```
 
-If you've used HTMLto do this in the past, you'll know that it pulls in WebKit, is not particularly fast, and has [thread-safety issues](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/CreatingAttributedStrings.html). This new approach using Markdown has no external dependencies and can be used off the main thread. The only restriction is that your code can only run on [a single thread at one time](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html) because it mutates foundation objects. The code is fast and typically used for operations that are not performed repeatedly, so it's unlikely that you'll have any issues.
+If you've used HTMLto do this in the past, you'll know that it pulls in WebKit, is not particularly fast, and has [thread-safety issues](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/AttributedStrings/Tasks/CreatingAttributedStrings.html). This new approach using Markdown has no external dependencies and can be used off the main thread. The only restriction is that the conversion code can only run on [a single thread at one time](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/ThreadSafetySummary/ThreadSafetySummary.html) because it mutates foundation objects. The code is fast and typically used for operations that are not performed repeatedly, so it's unlikely that you'll have any issues.
 
 Both producing and consuming Markdown involves a lot of text scanning. When going from Markdown to an attributed string, each type of marker (e.g. \*\* or \_ ) is checked and styling is added incrementally to the string. Going the other direction, each attribute range is checked and markers are emitted accordingly. Of course, once you get into the details of the implementation, you'll realize that it gets more complicated than you'd first expect. The only regular expressions used are to detect URLs and email addresses. So yeah, "hairy".
 
-One of the potential uses I see for this code is with localization. Putting Markdown into your .strings files will be a lot easier than juggling separate RTF files. Be careful about styles that are only available in Latin languages. A good example is the Japanese phrase これはテストです which can be rendered with a bold font (**これはテストです**) variant, but not italic (_これはテストです_). In these cases, you're better off using  `styleAttributes` to add an underline or some other visual emphasis that doesn't rely on the glyph's structure.
+One of the potential uses I see for this code is with localization. Putting Markdown into your .strings files will be a lot easier than juggling separate RTF files. Be careful about styles that are only available in Latin languages. A good example is the Japanese phrase これはテストです which can be rendered with a bold font (**これはテストです**) variant but not italic (_これはテストです_ can be synthesized, but quality will suffer). In these cases, you're better off using  `styleAttributes` to add an underline or some other visual emphasis that doesn't rely on the glyph's structure.
 
 ## Where?
 
@@ -51,11 +51,11 @@ This app was the first place I used this code and when you start using it, you'l
 
 This code was written by Craig Hockenberry. If you'd like to show your appreciation, there are several ways to do that:
 
-* [Get Tot!](http://tot.rocks) - if you love Markdown, you'll love the app that inspired this code. It's free on macOS and a one-time purchase on iOS.
+* [Get Tot!](http://tot.rocks) - if you love Markdown and text in general, you'll love the app that inspired this code. It's free on macOS and a one-time purchase on iOS.
 * [Support our Patreon](https://patreon.com/iconfactory) - you'll be supporting a good cause and get tons of cool stuff in return.
 * [Buy our apps](https://iconfactoryapps.com) - the Iconfactory has been making software for over twenty years and we're sure to have something that will appeal to you.
 
-As with any software, there is plenty of room for improvement. Feel free to send pull requests and file issues. I'm likely to ignore any issues without test cases.
+As with any software, there is plenty of room for improvement. Feel free to send pull requests and file issues. It's likely that I will ignore any issues that don't have a failing test case.
 
 ## License
 
