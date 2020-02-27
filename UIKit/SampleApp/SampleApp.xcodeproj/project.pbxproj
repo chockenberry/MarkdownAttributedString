@@ -18,7 +18,7 @@
 		44E8FA9C23D90634009E1D13 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 44E8FA9B23D90634009E1D13 /* Assets.xcassets */; };
 		44E8FA9F23D90634009E1D13 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 44E8FA9D23D90634009E1D13 /* LaunchScreen.storyboard */; };
 		44E8FAA223D90634009E1D13 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 44E8FAA123D90634009E1D13 /* main.m */; };
-		44E8FAAA23D906D9009E1D13 /* NSAttributedString+Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 44E8FAA823D906D9009E1D13 /* NSAttributedString+Markdown.m */; };
+		F5252EE32408396B0006ABE3 /* NSAttributedString+Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = F5252EE22408396B0006ABE3 /* NSAttributedString+Markdown.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,8 +40,8 @@
 		44E8FA9E23D90634009E1D13 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		44E8FAA023D90634009E1D13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		44E8FAA123D90634009E1D13 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		44E8FAA823D906D9009E1D13 /* NSAttributedString+Markdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSAttributedString+Markdown.m"; path = "../../NSAttributedString+Markdown.m"; sourceTree = "<group>"; };
-		44E8FAA923D906D9009E1D13 /* NSAttributedString+Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSAttributedString+Markdown.h"; path = "../../NSAttributedString+Markdown.h"; sourceTree = "<group>"; };
+		F5252EE12408396B0006ABE3 /* NSAttributedString+Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSAttributedString+Markdown.h"; sourceTree = "<group>"; };
+		F5252EE22408396B0006ABE3 /* NSAttributedString+Markdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSAttributedString+Markdown.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,8 +68,7 @@
 		44E8FA8023D90632009E1D13 = {
 			isa = PBXGroup;
 			children = (
-				44E8FAA923D906D9009E1D13 /* NSAttributedString+Markdown.h */,
-				44E8FAA823D906D9009E1D13 /* NSAttributedString+Markdown.m */,
+				F5252EDF2408396B0006ABE3 /* MarkdownAttributedString */,
 				44E8FA8B23D90632009E1D13 /* SampleApp */,
 				44E8FA8A23D90632009E1D13 /* Products */,
 			);
@@ -104,6 +103,24 @@
 				44E8FAA123D90634009E1D13 /* main.m */,
 			);
 			path = SampleApp;
+			sourceTree = "<group>";
+		};
+		F5252EDF2408396B0006ABE3 /* MarkdownAttributedString */ = {
+			isa = PBXGroup;
+			children = (
+				F5252EE02408396B0006ABE3 /* include */,
+				F5252EE22408396B0006ABE3 /* NSAttributedString+Markdown.m */,
+			);
+			name = MarkdownAttributedString;
+			path = ../../Sources/MarkdownAttributedString;
+			sourceTree = "<group>";
+		};
+		F5252EE02408396B0006ABE3 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				F5252EE12408396B0006ABE3 /* NSAttributedString+Markdown.h */,
+			);
+			path = include;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -179,8 +196,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				44E8FAA223D90634009E1D13 /* main.m in Sources */,
+				F5252EE32408396B0006ABE3 /* NSAttributedString+Markdown.m in Sources */,
 				44E8FA9723D90632009E1D13 /* SecondViewController.m in Sources */,
-				44E8FAAA23D906D9009E1D13 /* NSAttributedString+Markdown.m in Sources */,
 				44E8FA8E23D90632009E1D13 /* AppDelegate.m in Sources */,
 				44E8FA9423D90632009E1D13 /* FirstViewController.m in Sources */,
 				44B1EEA223DBA0F4004E2E29 /* StringData.m in Sources */,

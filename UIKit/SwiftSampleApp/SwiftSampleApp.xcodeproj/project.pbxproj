@@ -13,7 +13,7 @@
 		44962FE523E7A54A00E2A598 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 44962FE323E7A54A00E2A598 /* Main.storyboard */; };
 		44962FE723E7A54B00E2A598 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 44962FE623E7A54B00E2A598 /* Assets.xcassets */; };
 		44962FEA23E7A54B00E2A598 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 44962FE823E7A54B00E2A598 /* LaunchScreen.storyboard */; };
-		44962FF423E7A56B00E2A598 /* NSAttributedString+Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 44962FF323E7A56B00E2A598 /* NSAttributedString+Markdown.m */; };
+		F5252EE8240839930006ABE3 /* NSAttributedString+Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = F5252EE7240839930006ABE3 /* NSAttributedString+Markdown.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,8 +26,8 @@
 		44962FE923E7A54B00E2A598 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		44962FEB23E7A54B00E2A598 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		44962FF123E7A56A00E2A598 /* SwiftSampleApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftSampleApp-Bridging-Header.h"; sourceTree = "<group>"; };
-		44962FF223E7A56B00E2A598 /* NSAttributedString+Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSAttributedString+Markdown.h"; path = "../../NSAttributedString+Markdown.h"; sourceTree = "<group>"; };
-		44962FF323E7A56B00E2A598 /* NSAttributedString+Markdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSAttributedString+Markdown.m"; path = "../../NSAttributedString+Markdown.m"; sourceTree = "<group>"; };
+		F5252EE6240839930006ABE3 /* NSAttributedString+Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSAttributedString+Markdown.h"; sourceTree = "<group>"; };
+		F5252EE7240839930006ABE3 /* NSAttributedString+Markdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSAttributedString+Markdown.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,8 +44,7 @@
 		44962FD123E7A54A00E2A598 = {
 			isa = PBXGroup;
 			children = (
-				44962FF223E7A56B00E2A598 /* NSAttributedString+Markdown.h */,
-				44962FF323E7A56B00E2A598 /* NSAttributedString+Markdown.m */,
+				F5252EE4240839930006ABE3 /* MarkdownAttributedString */,
 				44962FF123E7A56A00E2A598 /* SwiftSampleApp-Bridging-Header.h */,
 				44962FDC23E7A54A00E2A598 /* SwiftSampleApp */,
 				44962FDB23E7A54A00E2A598 /* Products */,
@@ -72,6 +71,24 @@
 				44962FEB23E7A54B00E2A598 /* Info.plist */,
 			);
 			path = SwiftSampleApp;
+			sourceTree = "<group>";
+		};
+		F5252EE4240839930006ABE3 /* MarkdownAttributedString */ = {
+			isa = PBXGroup;
+			children = (
+				F5252EE5240839930006ABE3 /* include */,
+				F5252EE7240839930006ABE3 /* NSAttributedString+Markdown.m */,
+			);
+			name = MarkdownAttributedString;
+			path = ../../Sources/MarkdownAttributedString;
+			sourceTree = "<group>";
+		};
+		F5252EE5240839930006ABE3 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				F5252EE6240839930006ABE3 /* NSAttributedString+Markdown.h */,
+			);
+			path = include;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,7 +165,7 @@
 			files = (
 				44962FE223E7A54A00E2A598 /* ViewController.swift in Sources */,
 				44962FDE23E7A54A00E2A598 /* AppDelegate.swift in Sources */,
-				44962FF423E7A56B00E2A598 /* NSAttributedString+Markdown.m in Sources */,
+				F5252EE8240839930006ABE3 /* NSAttributedString+Markdown.m in Sources */,
 				44962FE023E7A54A00E2A598 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
