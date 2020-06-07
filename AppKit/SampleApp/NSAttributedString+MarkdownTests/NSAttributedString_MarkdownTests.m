@@ -309,4 +309,103 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
     }];
 }
 
+
+- (void)testInlineLinksWithEscapes
+{
+	NSString *testString = @"[\\(opt-shift-k\\)](https://apple.com)\n";
+	NSString *compareString = @"[(opt-shift-k)](  )<https://apple.com>[\\n](  )";
+	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
+	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
+}
+
+- (void)testMarkdownEscapes
+{
+	NSMutableAttributedString *attributedTestString = [[NSMutableAttributedString alloc] initWithString:@"my_variable_name = 1;"];
+	NSString *compareString = @"my\\_variable\\_name = 1;";
+	XCTAssert(checkRichTextToMarkdown(attributedTestString, compareString), @"Rich text to Markdown test failed");
+}
+
+// NOTE: The following tests were submitted by Simon Ward in https://github.com/chockenberry/MarkdownAttributedString/issues/4
+
+- (NSAttributedString *)attributedString:(NSString *)text withTraits:(NSFontDescriptorSymbolicTraits)traits
+{
+    NSFont *font = [NSFont systemFontOfSize: 17.0];
+    NSFontDescriptor *fontDescriptor = font.fontDescriptor;
+    NSFontDescriptorSymbolicTraits symbolicTraits = fontDescriptor.symbolicTraits;
+    
+    NSFontDescriptorSymbolicTraits newSymbolicTraits = symbolicTraits | traits;
+    NSFontDescriptor *newFontDescriptor = [fontDescriptor fontDescriptorWithSymbolicTraits:newSymbolicTraits];
+	NSFont *newFont = [NSFont fontWithDescriptor:newFontDescriptor size:font.pointSize];
+    
+    return [[NSAttributedString alloc] initWithString:text attributes:@{NSFontAttributeName: newFont}];
+}
+
+- (void)applySymbolicTraits:(NSFontDescriptorSymbolicTraits)traits toAttributedString:(NSMutableAttributedString *)attributedString range:(NSRange)range
+{
+    NSFont *font = [NSFont systemFontOfSize: 17.0];
+    NSFontDescriptor *fontDescriptor = font.fontDescriptor;
+    NSFontDescriptorSymbolicTraits symbolicTraits = fontDescriptor.symbolicTraits;
+    
+    NSFontDescriptorSymbolicTraits newSymbolicTraits = symbolicTraits | traits;
+    NSFontDescriptor *newFontDescriptor = [fontDescriptor fontDescriptorWithSymbolicTraits:newSymbolicTraits];
+    NSFont *newFont = [NSFont fontWithDescriptor:newFontDescriptor size:font.pointSize];
+    
+    [attributedString setAttributes:@{NSFontAttributeName: newFont} range:range];
+}
+
+- (void)testItalic
+{
+    NSAttributedString *attrString = [self attributedString:@"Italic" withTraits:NSFontDescriptorTraitItalic];
+    XCTAssertEqualObjects(attrString.markdownRepresentation, @"_Italic_");
+}
+
+- (void)testBold
+{
+    NSAttributedString *attrString = [self attributedString:@"Bold" withTraits:NSFontDescriptorTraitBold];
+    XCTAssertEqualObjects(attrString.markdownRepresentation, @"**Bold**");
+}
+
+- (void)testBoldItalic
+{
+    NSAttributedString *attrString = [self attributedString:@"Italic Bold" withTraits:NSFontDescriptorTraitItalic | NSFontDescriptorTraitBold];
+    XCTAssertEqualObjects(attrString.markdownRepresentation, @"**_Italic Bold_**");
+}
+
+- (void)testSeparate
+{
+    NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:@"This is italic and this is bold."];
+    [self applySymbolicTraits:NSFontDescriptorTraitItalic toAttributedString:attrString range:NSMakeRange(8, 6)];
+    [self applySymbolicTraits:NSFontDescriptorTraitBold toAttributedString:attrString range:NSMakeRange(27, 4)];
+    
+    XCTAssertEqualObjects(attrString.markdownRepresentation, @"This is _italic_ and this is **bold**.");
+}
+
+// This test is disabled for now: https://github.com/chockenberry/MarkdownAttributedString/issues/4
+#if NO
+- (void)testOverlap
+{
+    NSMutableAttributedString *attrString1 = [[NSMutableAttributedString alloc] initWithString:@"Italic Bold"];
+    [self applySymbolicTraits:NSFontDescriptorTraitItalic toAttributedString:attrString1 range:NSMakeRange(0, 11)];
+    [self applySymbolicTraits:NSFontDescriptorTraitItalic | NSFontDescriptorTraitBold toAttributedString:attrString1 range:NSMakeRange(7, 4)];
+    
+    XCTAssertEqualObjects(attrString1.markdownRepresentation, @"_Italic **Bold**_");
+    
+    NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:@"Bold Italic"];
+    [self applySymbolicTraits:NSFontDescriptorTraitBold toAttributedString:attrString2 range:NSMakeRange(0, 11)];
+    [self applySymbolicTraits:NSFontDescriptorTraitBold | NSFontDescriptorTraitItalic toAttributedString:attrString2 range:NSMakeRange(5, 6)];
+    
+    XCTAssertEqualObjects(attrString2.markdownRepresentation, @"**Bold _Italic_**");
+}
+#endif
+
+- (void)testEscaping
+{
+    for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!", @"|"])
+    {
+        NSAttributedString *attrString = [[NSAttributedString alloc] initWithString:character];
+        NSString *expected = [@"\\" stringByAppendingString:character];
+        XCTAssertEqualObjects(attrString.markdownRepresentation, expected);
+    }
+}
+
 @end
