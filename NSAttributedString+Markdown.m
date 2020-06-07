@@ -122,7 +122,7 @@ typedef enum {
     MarkdownSpanCode, // not supported
 } MarkdownSpanType;
 
-static BOOL hasCharacterRelative(NSString *string, NSRange range, NSUInteger offset, unichar character)
+static BOOL hasCharacterRelative(NSString *string, NSRange range, NSInteger offset, unichar character)
 {
 	BOOL hasCharacter = NO;
 	
