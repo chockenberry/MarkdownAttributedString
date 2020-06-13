@@ -644,37 +644,70 @@ static BOOL adjustRangeForWhitespace(NSRange range, NSString *string, NSRange *p
 
 static void addEscapesInMarkdownString(NSMutableString *text, NSString *marker)
 {
-	BOOL needsScan = YES;
-	NSUInteger scanIndex = 0;
-	while (needsScan) {
-		NSRange range = [text rangeOfString:marker options:0 range:NSMakeRange(scanIndex, text.length - scanIndex)];
-		if (range.length > 0) {
-			// found marker
-			BOOL insertEscape = NO;
+	if (marker.length == 1) {
 
-			if (marker.length == 1) {
-				// check if marker is a single character surrounded by spaces
-				BOOL hasPrefixSpace = hasCharacterRelative(text, range, -1, spaceCharacter);
-				BOOL hasSuffixSpace = hasCharacterRelative(text, range, +1, spaceCharacter);
-			
-				if (! (hasPrefixSpace && hasSuffixSpace)) {
-					insertEscape = YES;
+		const NSInteger prefixOffset = -1;
+		const NSInteger suffixOffset = +1;
+
+		BOOL needsScan = YES;
+		NSUInteger scanIndex = 0;
+		while (needsScan) {
+			NSRange range = [text rangeOfString:marker options:0 range:NSMakeRange(scanIndex, text.length - scanIndex)];
+			if (range.length > 0) {
+				// found marker
+				
+				BOOL isHorizontalRuler = NO;
+				if (range.location == 0 || hasCharacterRelative(text, range, prefixOffset, newlineCharacter)) {
+					// NOTE: At the start of a new line, check if there is nothing but three markers and additional space until the end of the line (and is therefore a horizontal ruler).
+					NSString *remainderText = [text substringFromIndex:range.location];
+					NSRange remainderRange = [remainderText rangeOfString:@"\n"];
+					if (remainderRange.location != NSNotFound) {
+						remainderText = [remainderText substringToIndex:remainderRange.location];
+					}
+					NSString *characterText = [remainderText stringByReplacingOccurrencesOfString:@" " withString:@""];
+					NSString *checkText = [characterText stringByReplacingOccurrencesOfString:marker withString:@""];
+					if (checkText.length == 0 && characterText.length >= 3) {
+						isHorizontalRuler = YES;
+						// no escapes are added, and scanning continues at end of line
+						scanIndex = range.location + range.length + remainderText.length - 1;
+					}
+				}
+				
+				if (! isHorizontalRuler) {
+					BOOL insertEscape = NO;
+					
+					// NOTE: Check if marker surrounded by whitespace. On entry, the text range has already been adjusted for whitespace using adjustRangeForWhitespace().
+					// If the range is at the beginning or end of the text, we can assume that there's whitespace before or after.
+					BOOL hasPrefixSpace = YES;
+					BOOL hasSuffixSpace = YES;
+					
+					if (range.location == 0) {
+						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
+					}
+					else if (range.location == (text.length - 1)) {
+						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+					}
+					else {
+						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
+					}
+					
+					if (! (hasPrefixSpace && hasSuffixSpace)) {
+						insertEscape = YES;
+					}
+					
+					if (insertEscape) {
+						[text insertString:escape atIndex:range.location];
+						scanIndex = range.location + range.length + escape.length;
+					}
+					else {
+						scanIndex = range.location + range.length;
+					}
 				}
 			}
 			else {
-				insertEscape = YES;
+				needsScan = NO;
 			}
-			
-			if (insertEscape) {
-				[text insertString:escape atIndex:range.location];
-				scanIndex = range.location + range.length + escape.length;
-			}
-			else {
-				scanIndex = range.location + range.length;
-			}
-		}
-		else {
-			needsScan = NO;
 		}
 	}
 }
@@ -846,14 +879,13 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 #endif
 #endif
 		
-		BOOL needsEscaping = NO;
+		BOOL needsEscaping = YES;
 		
 		if (currentRangeHasBold) {
 			if (! *inBoldRun) {
 				// emit start of bold run
 				prefixString = [prefixString stringByAppendingString:emphasisDoubleStart];
 				*inBoldRun = YES;
-				needsEscaping = YES;
 			}
 		}
 		if (currentRangeHasItalic) {
@@ -861,11 +893,11 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit start of italic run
 				prefixString = [prefixString stringByAppendingString:emphasisSingleStart];
 				*inItalicRun = YES;
-				needsEscaping = YES;
 			}
 		}
 		
 		if (currentRangeHasLink) {
+			needsEscaping = NO;
 			if (currentRangeURL) {
 				prefixString = [prefixString stringByAppendingString:linkInlineStart];
 				suffixString = [[[[suffixString stringByAppendingString:linkInlineStartDivider] stringByAppendingString:linkInlineEndDivider] stringByAppendingString:currentRangeURL.absoluteString] stringByAppendingString:linkInlineEnd];
@@ -888,7 +920,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit end of italic run
 				suffixString = [suffixString stringByAppendingString:emphasisSingleEnd];
 				*inItalicRun = NO;
-				needsEscaping = YES;
 			}
 		}
 		if (! nextRangeHasBold) {
@@ -896,7 +927,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit end of bold run
 				suffixString = [suffixString stringByAppendingString:emphasisDoubleEnd];
 				*inBoldRun = NO;
-				needsEscaping = YES;
 			}
 		}
 		
@@ -921,8 +951,8 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	// replace Markdown that appears in the source with escaped sequences (otherwise ¯\_(ツ)_/¯ will lose an arm during conversion)
-	[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\_" withString:@"\\\\_" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
-	[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\*" withString:@"\\\\*" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
+	//[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\_" withString:@"\\\\_" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
+	//[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\*" withString:@"\\\\*" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
 
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
