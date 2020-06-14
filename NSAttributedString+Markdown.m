@@ -35,7 +35,7 @@
 #define ALLOW_ALL_LITERALS 1	// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
 
 #define ESCAPE_ALL_LITERALS 0	// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text \(including punctuation\!\)\. You'll probably find this irritating\.
-								// Also enabling this causes many of the tests to break\. 
+								// Also enabling this causes many of the tests to break\.
 
 #define LOG_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
@@ -982,12 +982,12 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		}
 		
 		if (currentRangeHasLink) {
-			needsEscaping = NO;
 			if (currentRangeURL) {
 				prefixString = [prefixString stringByAppendingString:linkInlineStart];
 				suffixString = [[[[suffixString stringByAppendingString:linkInlineStartDivider] stringByAppendingString:linkInlineEndDivider] stringByAppendingString:currentRangeURL.absoluteString] stringByAppendingString:linkInlineEnd];
 			}
 			else {
+				needsEscaping = NO;
 				prefixString = [prefixString stringByAppendingString:linkAutomaticStart];
 				suffixString = [suffixString stringByAppendingString:linkAutomaticEnd];
 			}
