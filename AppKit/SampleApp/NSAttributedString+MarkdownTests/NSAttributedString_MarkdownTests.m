@@ -309,13 +309,19 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
     }];
 }
 
-
 - (void)testInlineLinksWithEscapes
 {
 	NSString *testString = @"[\\(opt-shift-k\\)](https://apple.com)\n";
 	NSString *compareString = @"[(opt-shift-k)](  )<https://apple.com>[\\n](  )";
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
+}
+
+- (void)testInlineLinksWithWithoutEscapes
+{
+	NSString *testString = @"[This (breaks) parsing](https://apple.com)\n";
+	NSString *compareString = @"[This (breaks) parsing](  )<https://apple.com>[\\n](  )";
+	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 }
 
 - (void)testMarkdownEscapes
@@ -400,8 +406,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 
 - (void)testEscaping
 {
-    for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!", @"|"])
-    {
+    for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!", @"|"]) {
         NSAttributedString *attrString = [[NSAttributedString alloc] initWithString:character];
         NSString *expected = [@"\\" stringByAppendingString:character];
         XCTAssertEqualObjects(attrString.markdownRepresentation, expected);

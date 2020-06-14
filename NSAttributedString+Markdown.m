@@ -289,24 +289,47 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 				}
 				while ((! abortEndScan) && (scanEndIndex < scanString.length)) {
 					BOOL continueScan = NO;
+
 					// look for end markers in a remaining range that's to the first visual line break (two newlines) or the end of the text
 					NSRange remainingRange = NSMakeRange(scanEndIndex, scanString.length - scanEndIndex);
 					NSRange visualLineRange = [scanString rangeOfString:visualLineBreak options:options range:remainingRange];
 					if (visualLineRange.location != NSNotFound) {
 						remainingRange = NSMakeRange(scanEndIndex, visualLineRange.location - scanEndIndex);
 					}
+
+					BOOL dividerMissing = NO;
+					if (dividerMarker) {
+						// if a divider was specified, make sure that the range we just captured contains it
+						NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:remainingRange];
+						if (dividerRange.location == NSNotFound) {
+							dividerMissing = YES;
+						}
+						else {
+							// adjust the remainingRange so that it falls after the divider
+							remainingRange.length = remainingRange.length - (NSMaxRange(dividerRange) - remainingRange.location);
+							remainingRange.location = NSMaxRange(dividerRange);
+						}
+					}
+
+					// look for end markers in a remaining range that's to the first visual line break (two newlines) or the end of the text
+//					NSRange remainingRange = NSMakeRange(scanEndIndex, scanString.length - scanEndIndex);
+//					NSRange visualLineRange = [scanString rangeOfString:visualLineBreak options:options range:remainingRange];
+//					if (visualLineRange.location != NSNotFound) {
+//						remainingRange = NSMakeRange(scanEndIndex, visualLineRange.location - scanEndIndex);
+//					}
+					// TODO: ensure that endRange is past dividerRange so that "[This (breaks) parsing](http://example.com)" works OK.
 					endRange = [scanString rangeOfString:endMarker options:options range:remainingRange];
 					if (endRange.length > 0) {
 						// found potential end marker
 						
-						BOOL dividerMissing = NO;
-						if (dividerMarker) {
-							// if a divider was specified, make sure that the range we just captured contains it
-							NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:NSMakeRange(scanEndIndex, endRange.location - scanEndIndex)];
-							if (dividerRange.location == NSNotFound) {
-								dividerMissing = YES;
-							}
-						}
+//						BOOL dividerMissing = NO;
+//						if (dividerMarker) {
+//							// if a divider was specified, make sure that the range we just captured contains it
+//							NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:NSMakeRange(scanEndIndex, endRange.location - scanEndIndex)];
+//							if (dividerRange.location == NSNotFound) {
+//								dividerMissing = YES;
+//							}
+//						}
 						if (! dividerMissing) {
 							BOOL hasEscapeMarker = hasCharacterRelative(scanString, endRange, -1, escapeCharacter);
 							BOOL hasPrefixSpace = hasCharacterRelative(scanString, endRange, -1, spaceCharacter);
@@ -389,11 +412,11 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							NSString *linkText = nil;
 							NSString *inlineLink = nil;
 							NSString *matchString = [result.string substringWithRange:mutatedMatchTextRange];
-							NSRange linkTextMarkerRange = [matchString rangeOfString:linkInlineStartDivider options:0 range:NSMakeRange(0, matchString.length)];
+							NSRange linkTextMarkerRange = [matchString rangeOfString:linkInlineStartDivider options:0 range:NSMakeRange(0, matchString.length)]; // text before "]"
 							if (linkTextMarkerRange.length > 0) {
 								NSRange linkTextRange = NSMakeRange(0, linkTextMarkerRange.location);
 								linkText = [matchString substringWithRange:linkTextRange];
-								NSRange inlineLinkMarkerRange = [matchString rangeOfString:linkInlineEndDivider options:NSBackwardsSearch range:NSMakeRange(0, matchString.length)];
+								NSRange inlineLinkMarkerRange = [matchString rangeOfString:linkInlineEndDivider options:NSBackwardsSearch range:NSMakeRange(0, matchString.length)]; // text after "("
 								if (inlineLinkMarkerRange.length > 0) {
 									if (inlineLinkMarkerRange.location == linkTextMarkerRange.location + linkTextMarkerRange.length) {
 										NSUInteger markerIndex = inlineLinkMarkerRange.location + 1;
