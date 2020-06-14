@@ -137,7 +137,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 
 - (void)testSymbolsAndLiterals
 {
-	NSString *testString = @"Test ¯\\\\_(ツ)\\_/¯";
+	NSString *testString = @"Test ¯\\\\\\_(ツ)\\_/¯";
 	NSString *compareString = @"[Test ¯\\_(ツ)_/¯](  )";
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
@@ -243,8 +243,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 - (void)testInlineLinksWithMarkers
 {
 	NSString *testString = @"Test **[w\\_oo\\_t](https://daringfireball.net/2020/02/my_2019_apple_report_card)**";
-	NSString *compareString = @"[Test ](  )[w_oo_t](B )<https://daringfireball.net/2020/02/my_2019_apple_report_card>";
-	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
+	NSString *compareString = @"[Test ](  )[w_oo_t](B )<https://daringfireball.net/2020/02/my_2019_apple_report_card>";	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
 
@@ -311,16 +310,15 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 
 - (void)testInlineLinksWithEscapes
 {
-	NSString *testString = @"[\\(opt-shift-k\\)](https://apple.com)\n";
+	NSString *testString = @"[\\(opt\\-shift\\-k\\)](https://apple.com)\n";
 	NSString *compareString = @"[(opt-shift-k)](  )<https://apple.com>[\\n](  )";
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
-	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
 
 - (void)testInlineLinksWithWithoutEscapes
 {
-	NSString *testString = @"[This (breaks) parsing](https://apple.com)\n";
-	NSString *compareString = @"[This (breaks) parsing](  )<https://apple.com>[\\n](  )";
+	NSString *testString = @"[This (should not break) parsing](https://apple.com)\n";
+	NSString *compareString = @"[This (should not break) parsing](  )<https://apple.com>[\\n](  )";
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 }
 
@@ -329,6 +327,14 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	NSMutableAttributedString *attributedTestString = [[NSMutableAttributedString alloc] initWithString:@"my_variable_name = 1;"];
 	NSString *compareString = @"my\\_variable\\_name = 1;";
 	XCTAssert(checkRichTextToMarkdown(attributedTestString, compareString), @"Rich text to Markdown test failed");
+}
+
+- (void)testBackslashEscapes
+{
+	NSString *testString = @"This is two \\\\\\\\ escapes and this is \\\\\\\\\\\\ three and don't break here \\";
+	NSString *compareString = @"[This is two \\\\ escapes and this is \\\\\\ three and don't break here \\](  )";
+	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
+	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
 
 // NOTE: The following tests were submitted by Simon Ward in https://github.com/chockenberry/MarkdownAttributedString/issues/4
@@ -386,8 +392,8 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
     XCTAssertEqualObjects(attrString.markdownRepresentation, @"This is _italic_ and this is **bold**.");
 }
 
-// This test is disabled for now: https://github.com/chockenberry/MarkdownAttributedString/issues/4
 #if NO
+// NOTE: This test is disabled for now: https://github.com/chockenberry/MarkdownAttributedString/issues/4
 - (void)testOverlap
 {
     NSMutableAttributedString *attrString1 = [[NSMutableAttributedString alloc] initWithString:@"Italic Bold"];
@@ -404,13 +410,16 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 }
 #endif
 
+#if NO
+// NOTE: This test will pass if ESCAPE_ALL_LITERALS is turned on, but that has a nasty side effect where the punctuation in regular text gets escaped and becomes hard to read.
 - (void)testEscaping
 {
-    for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!", @"|"]) {
+    for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!"]) {
         NSAttributedString *attrString = [[NSAttributedString alloc] initWithString:character];
         NSString *expected = [@"\\" stringByAppendingString:character];
         XCTAssertEqualObjects(attrString.markdownRepresentation, expected);
     }
 }
+#endif
 
 @end

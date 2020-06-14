@@ -32,6 +32,10 @@
 
 #define ALLOW_LINKS 1			// CONFIGURATION - When enabled, inline and automatic links in Markdown will be converted to rich text attributes.
 #define ALLOW_ALTERNATES 1		// CONFIGURATION - When enabled, alternate Markdown such as * for single emphasis and __ for double will be converted.
+#define ALLOW_ALL_LITERALS 1	// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
+
+#define ESCAPE_ALL_LITERALS 0	// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text \(including punctuation\!\)\. You'll probably find this irritating\.
+								// Also enabling this causes many of the tests to break\. 
 
 #define LOG_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
@@ -64,6 +68,53 @@
 #else
 	#define DebugLog(...) do {} while (0)
 #endif
+
+NSString *const literalBackslash = @"\\";
+NSString *const literalAsterisk = @"*";
+NSString *const literalUnderscore = @"_";
+
+#if ALLOW_ALL_LITERALS
+NSString *const literalBacktick = @"`";
+NSString *const literalCurlyBraceOpen = @"{";
+NSString *const literalCurlyBraceClose = @"}";
+NSString *const literalSquareBracketOpen = @"[";
+NSString *const literalSquareBracketClose = @"]";
+NSString *const literalParenthesesOpen = @"(";
+NSString *const literalParenthesesClose = @")";
+NSString *const literalHashMark = @"#";
+NSString *const literalPlusSign = @"+";
+NSString *const literalMinusSign = @"-";
+NSString *const literalDot = @".";
+NSString *const literalExclamationPoint = @"!";
+#endif
+
+@implementation NSCharacterSet (Markdown)
+
++ (NSCharacterSet *)markdownLiteralCharacterSet {
+	NSMutableString *characters = [NSMutableString string];
+	[characters appendString:literalBackslash];
+	[characters appendString:literalAsterisk];
+	[characters appendString:literalUnderscore];
+
+#if ALLOW_ALL_LITERALS
+	[characters appendString:literalBacktick];
+	[characters appendString:literalCurlyBraceOpen];
+	[characters appendString:literalCurlyBraceClose];
+	[characters appendString:literalSquareBracketOpen];
+	[characters appendString:literalSquareBracketClose];
+	[characters appendString:literalParenthesesOpen];
+	[characters appendString:literalParenthesesClose];
+	[characters appendString:literalHashMark];
+	[characters appendString:literalPlusSign];
+	[characters appendString:literalMinusSign];
+	[characters appendString:literalDot];
+	[characters appendString:literalExclamationPoint];
+#endif
+	
+	return [NSCharacterSet characterSetWithCharactersInString:characters];
+}
+
+@end
 
 MarkdownStyleKey MarkdownStyleEmphasisSingle = @"MarkdownStyleEmphasisSingle";
 MarkdownStyleKey MarkdownStyleEmphasisDouble = @"MarkdownStyleEmphasisDouble";
@@ -103,10 +154,6 @@ NSString *const emphasisDoubleAlternateEnd = @"__";
 NSString *const codeStart = @"`";
 NSString *const codeEnd = @"`";
 #endif
-
-NSString *const escape = @"\\";
-NSString *const literalAsterisk = @"*";
-NSString *const literalUnderscore = @"_";
 
 const unichar escapeCharacter = '\\';
 const unichar spaceCharacter = ' ';
@@ -305,31 +352,22 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							dividerMissing = YES;
 						}
 						else {
-							// adjust the remainingRange so that it falls after the divider
-							remainingRange.length = remainingRange.length - (NSMaxRange(dividerRange) - remainingRange.location);
-							remainingRange.location = NSMaxRange(dividerRange);
+							// adjust the remainingRange so that it falls after a divider that's not escaped
+							BOOL hasEscapeMarker = hasCharacterRelative(scanString, dividerRange, -1, escapeCharacter);
+							if (hasEscapeMarker) {
+								dividerMissing = YES;
+							}
+							else {
+								remainingRange.length = remainingRange.length - (NSMaxRange(dividerRange) - remainingRange.location);
+								remainingRange.location = NSMaxRange(dividerRange);
+							}
 						}
 					}
 
-					// look for end markers in a remaining range that's to the first visual line break (two newlines) or the end of the text
-//					NSRange remainingRange = NSMakeRange(scanEndIndex, scanString.length - scanEndIndex);
-//					NSRange visualLineRange = [scanString rangeOfString:visualLineBreak options:options range:remainingRange];
-//					if (visualLineRange.location != NSNotFound) {
-//						remainingRange = NSMakeRange(scanEndIndex, visualLineRange.location - scanEndIndex);
-//					}
-					// TODO: ensure that endRange is past dividerRange so that "[This (breaks) parsing](http://example.com)" works OK.
 					endRange = [scanString rangeOfString:endMarker options:options range:remainingRange];
 					if (endRange.length > 0) {
 						// found potential end marker
-						
-//						BOOL dividerMissing = NO;
-//						if (dividerMarker) {
-//							// if a divider was specified, make sure that the range we just captured contains it
-//							NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:NSMakeRange(scanEndIndex, endRange.location - scanEndIndex)];
-//							if (dividerRange.location == NSNotFound) {
-//								dividerMissing = YES;
-//							}
-//						}
+
 						if (! dividerMissing) {
 							BOOL hasEscapeMarker = hasCharacterRelative(scanString, endRange, -1, escapeCharacter);
 							BOOL hasPrefixSpace = hasCharacterRelative(scanString, endRange, -1, spaceCharacter);
@@ -542,22 +580,29 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 #endif
 }
 
-static void removeEscapesInAttributedString(NSMutableAttributedString *result, NSString *replacement)
+static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedString *result, NSCharacterSet *characterSet)
 {
-	NSString *match = [escape stringByAppendingString:replacement];
-
 	NSUInteger scanStart = 0;
 	BOOL needsScan = YES;
 	while (needsScan) {
 		NSString *scanString = result.string;
-		NSRange range = [scanString rangeOfString:match options:0 range:NSMakeRange(scanStart, scanString.length - scanStart)];
+		NSRange range = [scanString rangeOfCharacterFromSet:characterSet options:0 range:NSMakeRange(scanStart, scanString.length - scanStart)];
 		if (range.length > 0) {
-			// found match, remove the escape with its replacement
-			[result replaceCharactersInRange:range withString:replacement];
-			
-			// NOTE: Since we're mutating the string as we scan it, range.location is the first character after the escape character and
-			// where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
-			scanStart = range.location;
+			BOOL hasEscapeMarker = hasCharacterRelative(scanString, range, -1, escapeCharacter);
+			if (hasEscapeMarker) {
+				// found character with escape, remove it
+				[result replaceCharactersInRange:NSMakeRange(range.location - 1, 1) withString:@""];
+				
+				// NOTE: Since we're mutating the string as we scan it, range.location is the first character after the literal character and
+				// where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
+				scanStart = NSMaxRange(range);
+				if (scanStart > result.length) {
+					needsScan = NO;
+				}
+			}
+			else {
+				scanStart = NSMaxRange(range);
+			}
 		}
 		else {
 			needsScan = NO;
@@ -605,10 +650,9 @@ static void removeEscapesInAttributedString(NSMutableAttributedString *result, N
 	updateAttributedString(result, emphasisSingleAlternateStart, nil, emphasisSingleAlternateEnd, MarkdownSpanEmphasisSingle, styleAttributes);
 #endif
 
-	// remove backslashes from any escaped markers
-	removeEscapesInAttributedString(result, literalAsterisk);
-	removeEscapesInAttributedString(result, literalUnderscore);
-
+	// remove backslashes from any escaped markers that haven't already been converted
+	removeEscapedCharacterSetInAttributedString(result, NSCharacterSet.markdownLiteralCharacterSet);
+	
 	return result;
 }
 
@@ -720,8 +764,8 @@ static void addEscapesInMarkdownString(NSMutableString *text, NSString *marker)
 					}
 					
 					if (insertEscape) {
-						[text insertString:escape atIndex:range.location];
-						scanIndex = range.location + range.length + escape.length;
+						[text insertString:literalBackslash atIndex:range.location];
+						scanIndex = range.location + range.length + literalBackslash.length;
 					}
 					else {
 						scanIndex = range.location + range.length;
@@ -747,10 +791,28 @@ static void updateMarkdownString(NSMutableString *result, NSString *string, NSSt
 	}
 	
 	NSMutableString *text = [NSMutableString stringWithString:[string substringWithRange:textRange]];
-	// escaping literals in an automatic link will break it
+	// NOTE: Escaping literals isn't always needed. In an automatic link, the escapes will break the URL.
 	if (needsEscaping) {
+		// NOTE: This has to happen first since we're modifying the string in place (and don't want to escape the backslashes we're adding below).
+		addEscapesInMarkdownString(text, literalBackslash);
+		
 		addEscapesInMarkdownString(text, literalAsterisk);
 		addEscapesInMarkdownString(text, literalUnderscore);
+
+#if ALLOW_ALL_LITERALS && ESCAPE_ALL_LITERALS
+		addEscapesInMarkdownString(text, literalBacktick);
+		addEscapesInMarkdownString(text, literalCurlyBraceOpen);
+		addEscapesInMarkdownString(text, literalCurlyBraceClose);
+		addEscapesInMarkdownString(text, literalSquareBracketOpen);
+		addEscapesInMarkdownString(text, literalSquareBracketClose);
+		addEscapesInMarkdownString(text, literalParenthesesOpen);
+		addEscapesInMarkdownString(text, literalParenthesesClose);
+		addEscapesInMarkdownString(text, literalHashMark);
+		addEscapesInMarkdownString(text, literalPlusSign);
+		addEscapesInMarkdownString(text, literalMinusSign);
+		addEscapesInMarkdownString(text, literalDot);
+		addEscapesInMarkdownString(text, literalExclamationPoint);
+#endif
 	}
 	[result appendString:[text copy]];
 

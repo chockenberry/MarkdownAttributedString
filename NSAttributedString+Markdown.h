@@ -39,6 +39,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface NSCharacterSet (Markdown)
+
+@property (readonly, class, copy) NSCharacterSet *markdownLiteralCharacterSet;
+
+@end
+
+
 typedef NSString * MarkdownStyleKey NS_EXTENSIBLE_STRING_ENUM;
 
 extern MarkdownStyleKey MarkdownStyleEmphasisSingle;                // attribute dictionary for occurances of _ or * (emphasis, typically an italic font)
