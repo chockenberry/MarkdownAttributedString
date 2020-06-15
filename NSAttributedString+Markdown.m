@@ -116,9 +116,13 @@ NSString *const literalExclamationPoint = @"!";
 
 @end
 
+NSString *const UTTypeMarkdown = @"net.daringfireball.markdown";
+
 MarkdownStyleKey MarkdownStyleEmphasisSingle = @"MarkdownStyleEmphasisSingle";
 MarkdownStyleKey MarkdownStyleEmphasisDouble = @"MarkdownStyleEmphasisDouble";
 MarkdownStyleKey MarkdownStyleEmphasisBoth = @"MarkdownStyleEmphasisBoth";
+
+MarkdownStyleKey MarkdownStyleLink = @"MarkdownStyleLink";
 
 #if ALLOW_CODE_MARKERS
 MarkdownStyleKey MarkdownStyleCode = @"MarkdownStyleCode";
@@ -467,7 +471,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 								NSURL *URL = [NSURL URLWithString:inlineLink];
 								if (URL) {
 									replacementString = linkText;
-									replacementAttributes = @{ NSLinkAttributeName: URL };
+									if (styleAttributes[MarkdownStyleLink]) {
+										replacementAttributes = styleAttributes[MarkdownStyleLink];
+									}
+									else {
+										replacementAttributes = @{ NSLinkAttributeName: URL };
+									}
 									replaceMarkers = YES;
 								}
 							}
@@ -479,7 +488,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							if (URL) {
 								if (URL.scheme) {
 									// use URL as-is (could be tel: or ftp: or something else that's not specified in Markdown syntax)
-									replacementAttributes = @{ NSLinkAttributeName: URL };
+									if (styleAttributes[MarkdownStyleLink]) {
+										replacementAttributes = styleAttributes[MarkdownStyleLink];
+									}
+									else {
+										replacementAttributes = @{ NSLinkAttributeName: URL };
+									}
 									replaceMarkers = YES;
 								}
 								else {
@@ -505,7 +519,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 										}
 									}
 									if (synthesizedURL) {
-										replacementAttributes = @{ NSLinkAttributeName: synthesizedURL };
+										if (styleAttributes[MarkdownStyleLink]) {
+											replacementAttributes = styleAttributes[MarkdownStyleLink];
+										}
+										else {
+											replacementAttributes = @{ NSLinkAttributeName: synthesizedURL };
+										}
 										replaceMarkers = YES;
 									}
 								}

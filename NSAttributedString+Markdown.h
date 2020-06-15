@@ -45,12 +45,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+extern NSString *const UTTypeMarkdown;
+// NOTE: The definition above can be used to determine if text on the clipboard contains Markdown:
+//
+// if ([UIPasteboard.generalPasteboard containsPasteboardTypes:@[ UTTypeMarkdown, (NSString *)kUTTypeText ]]) { ... }
+
 
 typedef NSString * MarkdownStyleKey NS_EXTENSIBLE_STRING_ENUM;
 
 extern MarkdownStyleKey MarkdownStyleEmphasisSingle;                // attribute dictionary for occurances of _ or * (emphasis, typically an italic font)
 extern MarkdownStyleKey MarkdownStyleEmphasisDouble;                // attribute dictionary for occurances of __ or ** (strong, typically a bold font)
 extern MarkdownStyleKey MarkdownStyleEmphasisBoth;					// attribute dictionary for occurances of _ or * within __ or ** (emphasis and strong, typically a bold italic font)
+
+extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionary to use instead of NSLinkAttributeName, link will be styled with attributes instead of clickable
 
 #if ALLOW_CODE_MARKERS
 extern MarkdownStyleKey MarkdownStyleCode;			                // EXPERIMENTAL - attribute dictionary for occuranges of `
