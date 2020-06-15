@@ -394,6 +394,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 
 #if NO
 // NOTE: This test is disabled for now: https://github.com/chockenberry/MarkdownAttributedString/issues/4
+// I'm not sure this is a valid test, Markdown (like HTML) has no requirement for the order of styling or its scope.
 - (void)testOverlap
 {
     NSMutableAttributedString *attrString1 = [[NSMutableAttributedString alloc] initWithString:@"Italic Bold"];
@@ -411,7 +412,8 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 #endif
 
 #if NO
-// NOTE: This test will pass if ESCAPE_ALL_LITERALS is turned on, but that has a nasty side effect where the punctuation in regular text gets escaped and becomes hard to read.
+// NOTE: This test is disabled for now: https://github.com/chockenberry/MarkdownAttributedString/issues/5
+// The test will pass if ESCAPE_ALL_LITERALS is turned on, but that has a nasty side effect where the punctuation in regular text gets escaped and becomes hard to read.
 - (void)testEscaping
 {
     for (NSString *character in @[@"\\", @"`", @"*", @"_", @"{", @"}", @"[", @"]", @"(", @")", @"#", @"+", @"-", @".", @"!"]) {

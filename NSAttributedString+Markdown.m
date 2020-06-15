@@ -35,7 +35,7 @@
 #define ALLOW_ALL_LITERALS 1	// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
 
 #define ESCAPE_ALL_LITERALS 0	// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text \(including punctuation\!\)\. You'll probably find this irritating\.
-								// Also enabling this causes many of the tests to break\.
+								// Not only is text harder to read \- it breaks many of the tests\.
 
 #define LOG_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
@@ -593,8 +593,8 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 				// found character with escape, remove it
 				[result replaceCharactersInRange:NSMakeRange(range.location - 1, 1) withString:@""];
 				
-				// NOTE: Since we're mutating the string as we scan it, range.location is the first character after the literal character and
-				// where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
+				// NOTE: Since we're mutating by removing the escape characters in the string as we scan it, range.location will the first character after the matched literal character
+				// and where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
 				scanStart = NSMaxRange(range);
 				if (scanStart > result.length) {
 					needsScan = NO;
@@ -1035,9 +1035,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	// remove attributes that may break a range we're interested in (like paragraph styling from edits in UITextView)
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
-	// replace Markdown that appears in the source with escaped sequences (otherwise ¯\_(ツ)_/¯ will lose an arm during conversion)
-	//[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\_" withString:@"\\\\_" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
-	//[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\*" withString:@"\\\\*" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
 
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
