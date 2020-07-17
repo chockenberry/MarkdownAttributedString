@@ -471,12 +471,11 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 								NSURL *URL = [NSURL URLWithString:inlineLink];
 								if (URL) {
 									replacementString = linkText;
+                                    NSMutableDictionary<NSAttributedStringKey, id> *dict = [@{ NSLinkAttributeName: URL } mutableCopy];
 									if (styleAttributes[MarkdownStyleLink]) {
-										replacementAttributes = styleAttributes[MarkdownStyleLink];
+                                        [dict addEntriesFromDictionary:styleAttributes[MarkdownStyleLink]];
 									}
-									else {
-										replacementAttributes = @{ NSLinkAttributeName: URL };
-									}
+                                    replacementAttributes = [dict copy];
 									replaceMarkers = YES;
 								}
 							}
