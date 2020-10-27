@@ -32,6 +32,10 @@
 
 #define ALLOW_LINKS 1			// CONFIGURATION - When enabled, inline and automatic links in Markdown will be converted to rich text attributes.
 #define ALLOW_ALTERNATES 1		// CONFIGURATION - When enabled, alternate Markdown such as * for single emphasis and __ for double will be converted.
+#define ALLOW_ALL_LITERALS 1	// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
+
+#define ESCAPE_ALL_LITERALS 0	// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text \(including punctuation\!\)\. You'll probably find this irritating\.
+								// Not only is text harder to read \- it breaks many of the tests\.
 
 #define LOG_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
@@ -65,9 +69,60 @@
 	#define DebugLog(...) do {} while (0)
 #endif
 
+NSString *const literalBackslash = @"\\";
+NSString *const literalAsterisk = @"*";
+NSString *const literalUnderscore = @"_";
+
+#if ALLOW_ALL_LITERALS
+NSString *const literalBacktick = @"`";
+NSString *const literalCurlyBraceOpen = @"{";
+NSString *const literalCurlyBraceClose = @"}";
+NSString *const literalSquareBracketOpen = @"[";
+NSString *const literalSquareBracketClose = @"]";
+NSString *const literalParenthesesOpen = @"(";
+NSString *const literalParenthesesClose = @")";
+NSString *const literalHashMark = @"#";
+NSString *const literalPlusSign = @"+";
+NSString *const literalMinusSign = @"-";
+NSString *const literalDot = @".";
+NSString *const literalExclamationPoint = @"!";
+#endif
+
+@implementation NSCharacterSet (Markdown)
+
++ (NSCharacterSet *)markdownLiteralCharacterSet {
+	NSMutableString *characters = [NSMutableString string];
+	[characters appendString:literalBackslash];
+	[characters appendString:literalAsterisk];
+	[characters appendString:literalUnderscore];
+
+#if ALLOW_ALL_LITERALS
+	[characters appendString:literalBacktick];
+	[characters appendString:literalCurlyBraceOpen];
+	[characters appendString:literalCurlyBraceClose];
+	[characters appendString:literalSquareBracketOpen];
+	[characters appendString:literalSquareBracketClose];
+	[characters appendString:literalParenthesesOpen];
+	[characters appendString:literalParenthesesClose];
+	[characters appendString:literalHashMark];
+	[characters appendString:literalPlusSign];
+	[characters appendString:literalMinusSign];
+	[characters appendString:literalDot];
+	[characters appendString:literalExclamationPoint];
+#endif
+	
+	return [NSCharacterSet characterSetWithCharactersInString:characters];
+}
+
+@end
+
+NSString *const UTTypeMarkdown = @"net.daringfireball.markdown";
+
 MarkdownStyleKey MarkdownStyleEmphasisSingle = @"MarkdownStyleEmphasisSingle";
 MarkdownStyleKey MarkdownStyleEmphasisDouble = @"MarkdownStyleEmphasisDouble";
 MarkdownStyleKey MarkdownStyleEmphasisBoth = @"MarkdownStyleEmphasisBoth";
+
+MarkdownStyleKey MarkdownStyleLink = @"MarkdownStyleLink";
 
 #if ALLOW_CODE_MARKERS
 MarkdownStyleKey MarkdownStyleCode = @"MarkdownStyleCode";
@@ -104,10 +159,6 @@ NSString *const codeStart = @"`";
 NSString *const codeEnd = @"`";
 #endif
 
-NSString *const escape = @"\\";
-NSString *const literalAsterisk = @"*";
-NSString *const literalUnderscore = @"_";
-
 const unichar escapeCharacter = '\\';
 const unichar spaceCharacter = ' ';
 const unichar tabCharacter = '\t';
@@ -122,7 +173,7 @@ typedef enum {
     MarkdownSpanCode, // not supported
 } MarkdownSpanType;
 
-static BOOL hasCharacterRelative(NSString *string, NSRange range, NSUInteger offset, unichar character)
+static BOOL hasCharacterRelative(NSString *string, NSRange range, NSInteger offset, unichar character)
 {
 	BOOL hasCharacter = NO;
 	
@@ -289,24 +340,38 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 				}
 				while ((! abortEndScan) && (scanEndIndex < scanString.length)) {
 					BOOL continueScan = NO;
+
 					// look for end markers in a remaining range that's to the first visual line break (two newlines) or the end of the text
 					NSRange remainingRange = NSMakeRange(scanEndIndex, scanString.length - scanEndIndex);
 					NSRange visualLineRange = [scanString rangeOfString:visualLineBreak options:options range:remainingRange];
 					if (visualLineRange.location != NSNotFound) {
 						remainingRange = NSMakeRange(scanEndIndex, visualLineRange.location - scanEndIndex);
 					}
+
+					BOOL dividerMissing = NO;
+					if (dividerMarker) {
+						// if a divider was specified, make sure that the range we just captured contains it
+						NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:remainingRange];
+						if (dividerRange.location == NSNotFound) {
+							dividerMissing = YES;
+						}
+						else {
+							// adjust the remainingRange so that it falls after a divider that's not escaped
+							BOOL hasEscapeMarker = hasCharacterRelative(scanString, dividerRange, -1, escapeCharacter);
+							if (hasEscapeMarker) {
+								dividerMissing = YES;
+							}
+							else {
+								remainingRange.length = remainingRange.length - (NSMaxRange(dividerRange) - remainingRange.location);
+								remainingRange.location = NSMaxRange(dividerRange);
+							}
+						}
+					}
+
 					endRange = [scanString rangeOfString:endMarker options:options range:remainingRange];
 					if (endRange.length > 0) {
 						// found potential end marker
-						
-						BOOL dividerMissing = NO;
-						if (dividerMarker) {
-							// if a divider was specified, make sure that the range we just captured contains it
-							NSRange dividerRange = [scanString rangeOfString:dividerMarker options:options range:NSMakeRange(scanEndIndex, endRange.location - scanEndIndex)];
-							if (dividerRange.location == NSNotFound) {
-								dividerMissing = YES;
-							}
-						}
+
 						if (! dividerMissing) {
 							BOOL hasEscapeMarker = hasCharacterRelative(scanString, endRange, -1, escapeCharacter);
 							BOOL hasPrefixSpace = hasCharacterRelative(scanString, endRange, -1, spaceCharacter);
@@ -389,11 +454,11 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							NSString *linkText = nil;
 							NSString *inlineLink = nil;
 							NSString *matchString = [result.string substringWithRange:mutatedMatchTextRange];
-							NSRange linkTextMarkerRange = [matchString rangeOfString:linkInlineStartDivider options:0 range:NSMakeRange(0, matchString.length)];
+							NSRange linkTextMarkerRange = [matchString rangeOfString:linkInlineStartDivider options:0 range:NSMakeRange(0, matchString.length)]; // text before "]"
 							if (linkTextMarkerRange.length > 0) {
 								NSRange linkTextRange = NSMakeRange(0, linkTextMarkerRange.location);
 								linkText = [matchString substringWithRange:linkTextRange];
-								NSRange inlineLinkMarkerRange = [matchString rangeOfString:linkInlineEndDivider options:NSBackwardsSearch range:NSMakeRange(0, matchString.length)];
+								NSRange inlineLinkMarkerRange = [matchString rangeOfString:linkInlineEndDivider options:NSBackwardsSearch range:NSMakeRange(0, matchString.length)]; // text after "("
 								if (inlineLinkMarkerRange.length > 0) {
 									if (inlineLinkMarkerRange.location == linkTextMarkerRange.location + linkTextMarkerRange.length) {
 										NSUInteger markerIndex = inlineLinkMarkerRange.location + 1;
@@ -406,7 +471,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 								NSURL *URL = [NSURL URLWithString:inlineLink];
 								if (URL) {
 									replacementString = linkText;
-									replacementAttributes = @{ NSLinkAttributeName: URL };
+									if (styleAttributes[MarkdownStyleLink]) {
+										replacementAttributes = styleAttributes[MarkdownStyleLink];
+									}
+									else {
+										replacementAttributes = @{ NSLinkAttributeName: URL };
+									}
 									replaceMarkers = YES;
 								}
 							}
@@ -418,7 +488,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							if (URL) {
 								if (URL.scheme) {
 									// use URL as-is (could be tel: or ftp: or something else that's not specified in Markdown syntax)
-									replacementAttributes = @{ NSLinkAttributeName: URL };
+									if (styleAttributes[MarkdownStyleLink]) {
+										replacementAttributes = styleAttributes[MarkdownStyleLink];
+									}
+									else {
+										replacementAttributes = @{ NSLinkAttributeName: URL };
+									}
 									replaceMarkers = YES;
 								}
 								else {
@@ -444,7 +519,12 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 										}
 									}
 									if (synthesizedURL) {
-										replacementAttributes = @{ NSLinkAttributeName: synthesizedURL };
+										if (styleAttributes[MarkdownStyleLink]) {
+											replacementAttributes = styleAttributes[MarkdownStyleLink];
+										}
+										else {
+											replacementAttributes = @{ NSLinkAttributeName: synthesizedURL };
+										}
 										replaceMarkers = YES;
 									}
 								}
@@ -519,22 +599,29 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 #endif
 }
 
-static void removeEscapesInAttributedString(NSMutableAttributedString *result, NSString *replacement)
+static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedString *result, NSCharacterSet *characterSet)
 {
-	NSString *match = [escape stringByAppendingString:replacement];
-
 	NSUInteger scanStart = 0;
 	BOOL needsScan = YES;
 	while (needsScan) {
 		NSString *scanString = result.string;
-		NSRange range = [scanString rangeOfString:match options:0 range:NSMakeRange(scanStart, scanString.length - scanStart)];
+		NSRange range = [scanString rangeOfCharacterFromSet:characterSet options:0 range:NSMakeRange(scanStart, scanString.length - scanStart)];
 		if (range.length > 0) {
-			// found match, remove the escape with its replacement
-			[result replaceCharactersInRange:range withString:replacement];
-			
-			// NOTE: Since we're mutating the string as we scan it, range.location is the first character after the escape character and
-			// where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
-			scanStart = range.location;
+			BOOL hasEscapeMarker = hasCharacterRelative(scanString, range, -1, escapeCharacter);
+			if (hasEscapeMarker) {
+				// found character with escape, remove it
+				[result replaceCharactersInRange:NSMakeRange(range.location - 1, 1) withString:@""];
+				
+				// NOTE: Since we're mutating by removing the escape characters in the string as we scan it, range.location will the first character after the matched literal character
+				// and where we'll start our next scan. Like the mutationOffset above, this is some tricky stuff, in both senses of the word.
+				scanStart = NSMaxRange(range);
+				if (scanStart > result.length) {
+					needsScan = NO;
+				}
+			}
+			else {
+				scanStart = NSMaxRange(range);
+			}
 		}
 		else {
 			needsScan = NO;
@@ -582,10 +669,9 @@ static void removeEscapesInAttributedString(NSMutableAttributedString *result, N
 	updateAttributedString(result, emphasisSingleAlternateStart, nil, emphasisSingleAlternateEnd, MarkdownSpanEmphasisSingle, styleAttributes);
 #endif
 
-	// remove backslashes from any escaped markers
-	removeEscapesInAttributedString(result, literalAsterisk);
-	removeEscapesInAttributedString(result, literalUnderscore);
-
+	// remove backslashes from any escaped markers that haven't already been converted
+	removeEscapedCharacterSetInAttributedString(result, NSCharacterSet.markdownLiteralCharacterSet);
+	
 	return result;
 }
 
@@ -644,37 +730,70 @@ static BOOL adjustRangeForWhitespace(NSRange range, NSString *string, NSRange *p
 
 static void addEscapesInMarkdownString(NSMutableString *text, NSString *marker)
 {
-	BOOL needsScan = YES;
-	NSUInteger scanIndex = 0;
-	while (needsScan) {
-		NSRange range = [text rangeOfString:marker options:0 range:NSMakeRange(scanIndex, text.length - scanIndex)];
-		if (range.length > 0) {
-			// found marker
-			BOOL insertEscape = NO;
+	if (marker.length == 1) {
 
-			if (marker.length == 1) {
-				// check if marker is a single character surrounded by spaces
-				BOOL hasPrefixSpace = hasCharacterRelative(text, range, -1, spaceCharacter);
-				BOOL hasSuffixSpace = hasCharacterRelative(text, range, +1, spaceCharacter);
-			
-				if (! (hasPrefixSpace && hasSuffixSpace)) {
-					insertEscape = YES;
+		const NSInteger prefixOffset = -1;
+		const NSInteger suffixOffset = +1;
+
+		BOOL needsScan = YES;
+		NSUInteger scanIndex = 0;
+		while (needsScan) {
+			NSRange range = [text rangeOfString:marker options:0 range:NSMakeRange(scanIndex, text.length - scanIndex)];
+			if (range.length > 0) {
+				// found marker
+				
+				BOOL isHorizontalRuler = NO;
+				if (range.location == 0 || hasCharacterRelative(text, range, prefixOffset, newlineCharacter)) {
+					// NOTE: At the start of a new line, check if there is nothing but three markers and additional space until the end of the line (and is therefore a horizontal ruler).
+					NSString *remainderText = [text substringFromIndex:range.location];
+					NSRange remainderRange = [remainderText rangeOfString:@"\n"];
+					if (remainderRange.location != NSNotFound) {
+						remainderText = [remainderText substringToIndex:remainderRange.location];
+					}
+					NSString *characterText = [remainderText stringByReplacingOccurrencesOfString:@" " withString:@""];
+					NSString *checkText = [characterText stringByReplacingOccurrencesOfString:marker withString:@""];
+					if (checkText.length == 0 && characterText.length >= 3) {
+						isHorizontalRuler = YES;
+						// no escapes are added, and scanning continues at end of line
+						scanIndex = range.location + range.length + remainderText.length - 1;
+					}
+				}
+				
+				if (! isHorizontalRuler) {
+					BOOL insertEscape = NO;
+					
+					// NOTE: Check if marker surrounded by whitespace. On entry, the text range has already been adjusted for whitespace using adjustRangeForWhitespace().
+					// If the range is at the beginning or end of the text, we can assume that there's whitespace before or after.
+					BOOL hasPrefixSpace = YES;
+					BOOL hasSuffixSpace = YES;
+					
+					if (range.location == 0) {
+						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
+					}
+					else if (range.location == (text.length - 1)) {
+						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+					}
+					else {
+						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
+					}
+					
+					if (! (hasPrefixSpace && hasSuffixSpace)) {
+						insertEscape = YES;
+					}
+					
+					if (insertEscape) {
+						[text insertString:literalBackslash atIndex:range.location];
+						scanIndex = range.location + range.length + literalBackslash.length;
+					}
+					else {
+						scanIndex = range.location + range.length;
+					}
 				}
 			}
 			else {
-				insertEscape = YES;
+				needsScan = NO;
 			}
-			
-			if (insertEscape) {
-				[text insertString:escape atIndex:range.location];
-				scanIndex = range.location + range.length + escape.length;
-			}
-			else {
-				scanIndex = range.location + range.length;
-			}
-		}
-		else {
-			needsScan = NO;
 		}
 	}
 }
@@ -691,10 +810,28 @@ static void updateMarkdownString(NSMutableString *result, NSString *string, NSSt
 	}
 	
 	NSMutableString *text = [NSMutableString stringWithString:[string substringWithRange:textRange]];
-	// escaping literals in an automatic link will break it
+	// NOTE: Escaping literals isn't always needed. In an automatic link, the escapes will break the URL.
 	if (needsEscaping) {
+		// NOTE: This has to happen first since we're modifying the string in place (and don't want to escape the backslashes we're adding below).
+		addEscapesInMarkdownString(text, literalBackslash);
+		
 		addEscapesInMarkdownString(text, literalAsterisk);
 		addEscapesInMarkdownString(text, literalUnderscore);
+
+#if ALLOW_ALL_LITERALS && ESCAPE_ALL_LITERALS
+		addEscapesInMarkdownString(text, literalBacktick);
+		addEscapesInMarkdownString(text, literalCurlyBraceOpen);
+		addEscapesInMarkdownString(text, literalCurlyBraceClose);
+		addEscapesInMarkdownString(text, literalSquareBracketOpen);
+		addEscapesInMarkdownString(text, literalSquareBracketClose);
+		addEscapesInMarkdownString(text, literalParenthesesOpen);
+		addEscapesInMarkdownString(text, literalParenthesesClose);
+		addEscapesInMarkdownString(text, literalHashMark);
+		addEscapesInMarkdownString(text, literalPlusSign);
+		addEscapesInMarkdownString(text, literalMinusSign);
+		addEscapesInMarkdownString(text, literalDot);
+		addEscapesInMarkdownString(text, literalExclamationPoint);
+#endif
 	}
 	[result appendString:[text copy]];
 
@@ -846,14 +983,13 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 #endif
 #endif
 		
-		BOOL needsEscaping = NO;
+		BOOL needsEscaping = YES;
 		
 		if (currentRangeHasBold) {
 			if (! *inBoldRun) {
 				// emit start of bold run
 				prefixString = [prefixString stringByAppendingString:emphasisDoubleStart];
 				*inBoldRun = YES;
-				needsEscaping = YES;
 			}
 		}
 		if (currentRangeHasItalic) {
@@ -861,7 +997,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit start of italic run
 				prefixString = [prefixString stringByAppendingString:emphasisSingleStart];
 				*inItalicRun = YES;
-				needsEscaping = YES;
 			}
 		}
 		
@@ -871,6 +1006,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				suffixString = [[[[suffixString stringByAppendingString:linkInlineStartDivider] stringByAppendingString:linkInlineEndDivider] stringByAppendingString:currentRangeURL.absoluteString] stringByAppendingString:linkInlineEnd];
 			}
 			else {
+				needsEscaping = NO;
 				prefixString = [prefixString stringByAppendingString:linkAutomaticStart];
 				suffixString = [suffixString stringByAppendingString:linkAutomaticEnd];
 			}
@@ -888,7 +1024,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit end of italic run
 				suffixString = [suffixString stringByAppendingString:emphasisSingleEnd];
 				*inItalicRun = NO;
-				needsEscaping = YES;
 			}
 		}
 		if (! nextRangeHasBold) {
@@ -896,7 +1031,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				// emit end of bold run
 				suffixString = [suffixString stringByAppendingString:emphasisDoubleEnd];
 				*inBoldRun = NO;
-				needsEscaping = YES;
 			}
 		}
 		
@@ -920,9 +1054,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	// remove attributes that may break a range we're interested in (like paragraph styling from edits in UITextView)
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
-	// replace Markdown that appears in the source with escaped sequences (otherwise ¯\_(ツ)_/¯ will lose an arm during conversion)
-	[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\_" withString:@"\\\\_" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
-	[cleanAttributedString.mutableString replaceOccurrencesOfString:@"\\*" withString:@"\\\\*" options:(0) range:NSMakeRange(0, cleanAttributedString.length)];
 
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;

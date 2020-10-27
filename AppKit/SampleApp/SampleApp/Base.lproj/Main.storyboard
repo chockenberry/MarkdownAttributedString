@@ -166,6 +166,12 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="uyl-h8-XO2"/>
+                                        <menuItem title="Add Link…" keyEquivalent="k" id="grA-Ef-dVN">
+                                            <connections>
+                                                <action selector="orderFrontLinkPanel:" target="Ady-hI-5gd" id="SWQ-Iu-cYJ"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="bHh-cL-qja"/>
                                         <menuItem title="Find" id="4EN-yA-p0u">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <menu key="submenu" title="Find" id="1b7-l0-nxx">
