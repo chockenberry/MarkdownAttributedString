@@ -12,5 +12,5 @@ Pod::Spec.new do |s|
   s.macos.deployment_target = '10.14'
   s.watchos.deployment_target = '4.0'
 
-  s.source_files = 'NSAttributedString+Markdown.{h,m}'
+  s.source_files = 'Sources/NSAttributedString+Markdown.{h,m}'
 end
