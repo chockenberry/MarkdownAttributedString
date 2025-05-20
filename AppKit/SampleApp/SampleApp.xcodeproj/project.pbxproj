@@ -17,6 +17,7 @@
 		44B1EE9523DB91C9004E2E29 /* NSAttributedString+Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 44B1EE9323DB91C9004E2E29 /* NSAttributedString+Markdown.m */; };
 		44B1EE9923DB9254004E2E29 /* Examples.md in Resources */ = {isa = PBXBuildFile; fileRef = 44B1EE9723DB9254004E2E29 /* Examples.md */; };
 		44B1EE9A23DB9254004E2E29 /* Examples.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 44B1EE9823DB9254004E2E29 /* Examples.rtf */; };
+		44EE51F72DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = 44EE51F62DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,8 @@
 		44B1EE9423DB91C9004E2E29 /* NSAttributedString+Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSAttributedString+Markdown.h"; path = "../../NSAttributedString+Markdown.h"; sourceTree = "<group>"; };
 		44B1EE9723DB9254004E2E29 /* Examples.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = Examples.md; sourceTree = "<group>"; };
 		44B1EE9823DB9254004E2E29 /* Examples.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Examples.rtf; sourceTree = "<group>"; };
+		44EE51F52DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HorizontalRuleTextAttachment.h; path = SampleApp/HorizontalRuleTextAttachment.h; sourceTree = "<group>"; };
+		44EE51F62DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = HorizontalRuleTextAttachment.m; path = SampleApp/HorizontalRuleTextAttachment.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +84,8 @@
 		44B1EE7323DB90D5004E2E29 = {
 			isa = PBXGroup;
 			children = (
+				44EE51F52DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.h */,
+				44EE51F62DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m */,
 				44962FF523E8BCC400E2A598 /* README.md */,
 				44B1EE9423DB91C9004E2E29 /* NSAttributedString+Markdown.h */,
 				44B1EE9323DB91C9004E2E29 /* NSAttributedString+Markdown.m */,
@@ -237,6 +242,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				44EE51F72DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m in Sources */,
 				44B1EE8423DB90D5004E2E29 /* ViewController.m in Sources */,
 				44B1EE8C23DB90D6004E2E29 /* main.m in Sources */,
 				44B1EE9523DB91C9004E2E29 /* NSAttributedString+Markdown.m in Sources */,
@@ -430,6 +436,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iconfactory.SampleApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -450,6 +457,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iconfactory.SampleApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

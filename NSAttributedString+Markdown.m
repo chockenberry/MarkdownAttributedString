@@ -44,6 +44,8 @@
 
 #import "NSAttributedString+Markdown.h"
 
+#import "HorizontalRuleTextAttachment.h"
+
 #if TARGET_OS_OSX
 
 #define FONT_CLASS NSFont
@@ -260,6 +262,10 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 	}];
 }
 
+NSString *const horizontalRuleRangeKey = @"range";
+NSString *const horizontalRuleThicknessKey = @"thickness";
+NSString *const horizontalRuleTypeKey = @"type";
+
 static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType)
 {
 	/*
@@ -275,7 +281,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 	NSUInteger mutationOffset = 0;
 	
 	// check the input for horizontal rules and ignore markers that occur within their line's range
-	NSMutableArray *horizontalRuleRangeValues = [NSMutableArray array];
+	NSMutableArray<NSDictionary *> *horizontalRules = [NSMutableArray array];
 	//NSString *rulerString = [beginMarker substringToIndex:1];
 	//if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
 		NSRange checkRange = NSMakeRange(0, 1);
@@ -285,19 +291,46 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			
 			NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 			if ([trimmedString isEqualToString:@"---"]) {
-			// NOTE: The Markdown syntax specifies three or more characters, but for our purposes, it's more than one of an asterisk or underline.
-			//NSString *compressedString = [lineString stringByReplacingOccurrencesOfString:literalMinusSign withString:@""];
-			//NSString *trimmedString = [compressedString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-			//if (trimmedString.length == 0) {
-				[horizontalRuleRangeValues addObject:[NSValue valueWithRange:lineRange]];
+				NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
+				[horizontalRule setObject:@(1) forKey:horizontalRuleThicknessKey];
+				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
+				[horizontalRules addObject:horizontalRule];
 			}
+			else if ([trimmedString isEqualToString:@"***"]) {
+				NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
+				[horizontalRule setObject:@(2) forKey:horizontalRuleThicknessKey];
+				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
+				[horizontalRules addObject:horizontalRule];
+			}
+
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 	//}
 
-	for (NSValue *horizontalRuleRangeValue in horizontalRuleRangeValues.reverseObjectEnumerator) {
-		NSRange horizontalRuleRange = horizontalRuleRangeValue.rangeValue;
-		DebugLog(@"%s horizontalRuleRange = %@, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(horizontalRuleRange), [[scanString substringWithRange:horizontalRuleRange] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
+	// size is in points and will be included in RTFD package as a TIFF file
+	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(300, 1)];
+	[image lockFocus];
+	[NSColor.blackColor set];
+	NSRect fillRect = NSMakeRect(0, 0, 300, 1);
+	NSRectFill(fillRect);
+	[image unlockFocus];
+
+	for (NSDictionary *horizontalRule in horizontalRules.reverseObjectEnumerator) {
+		NSNumber *thicknessValue = [horizontalRule objectForKey:horizontalRuleThicknessKey];
+		CGFloat thickness = thicknessValue.doubleValue;
+		NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
+		NSRange range = rangeValue.rangeValue;
+		DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
+		
+		HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
+		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
+		textAttachment.image = image;
+		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
+		textAttachment.thickness = thickness;
+		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+		NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
+		[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
+		[result replaceCharactersInRange:range withAttributedString:replacement];
 	}
 
 }
@@ -1163,6 +1196,12 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		
 		index = currentRange.location + currentRange.length;
 	}
+	
+	unichar character = NSAttachmentCharacter;
+	NSString *attachment = [NSString stringWithCharacters:&character length:1];
+	NSRange range = [normalizedString rangeOfString:attachment];
+	NSDictionary<NSString *, id> *attributes = [normalizedAttributedString attributesAtIndex:range.location effectiveRange:nil];
+	id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
 	
 	return [result copy];
 }
