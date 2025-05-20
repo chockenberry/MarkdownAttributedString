@@ -262,12 +262,44 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 
 static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType)
 {
+	/*
 	NSArray<NSString *> *lines = [result.string componentsSeparatedByString:@"\n"];
 	for (NSString *line in lines) {
 #if LOG_CONVERSIONS
 		DebugLog(@"%s line = %@", "NSAttributedString+Markdown", line);
 #endif
 	}
+*/
+	// see the note below about these two variables
+	NSString *scanString = [result.string copy];
+	NSUInteger mutationOffset = 0;
+	
+	// check the input for horizontal rules and ignore markers that occur within their line's range
+	NSMutableArray *horizontalRuleRangeValues = [NSMutableArray array];
+	//NSString *rulerString = [beginMarker substringToIndex:1];
+	//if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
+		NSRange checkRange = NSMakeRange(0, 1);
+		while (checkRange.location + checkRange.length < scanString.length) {
+			NSRange lineRange = [scanString lineRangeForRange:checkRange];
+			NSString *lineString = [scanString substringWithRange:lineRange];
+			
+			NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+			if ([trimmedString isEqualToString:@"---"]) {
+			// NOTE: The Markdown syntax specifies three or more characters, but for our purposes, it's more than one of an asterisk or underline.
+			//NSString *compressedString = [lineString stringByReplacingOccurrencesOfString:literalMinusSign withString:@""];
+			//NSString *trimmedString = [compressedString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+			//if (trimmedString.length == 0) {
+				[horizontalRuleRangeValues addObject:[NSValue valueWithRange:lineRange]];
+			}
+			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
+		}
+	//}
+
+	for (NSValue *horizontalRuleRangeValue in horizontalRuleRangeValues.reverseObjectEnumerator) {
+		NSRange horizontalRuleRange = horizontalRuleRangeValue.rangeValue;
+		DebugLog(@"%s horizontalRuleRange = %@, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(horizontalRuleRange), [[scanString substringWithRange:horizontalRuleRange] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
+	}
+
 }
 
 static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
