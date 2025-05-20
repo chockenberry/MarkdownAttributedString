@@ -30,14 +30,17 @@
 // NOTE: Since the parser makes a pass over the source Markdown for each marker, turning off the ALLOW configuration items
 // below will improve performance slightly.
 
-#define ALLOW_LINKS 1			// CONFIGURATION - When enabled, inline and automatic links in Markdown will be converted to rich text attributes.
-#define ALLOW_ALTERNATES 1		// CONFIGURATION - When enabled, alternate Markdown such as * for single emphasis and __ for double will be converted.
-#define ALLOW_ALL_LITERALS 1	// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
+#define ALLOW_LINKS 1				// CONFIGURATION - When enabled, inline and automatic links in Markdown will be converted to rich text attributes.
+#define ALLOW_ALTERNATES 1			// CONFIGURATION - When enabled, alternate Markdown such as * for single emphasis and __ for double will be converted.
+#define ALLOW_ALL_LITERALS 1		// CONFIGURATION - When enabled, backslash escapes for all of Markdown's literal characters will be removed when converting to rich text. Otherwise it's a minimal set (just for emphasis and escapes).
 
-#define ESCAPE_ALL_LITERALS 0	// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text \(including punctuation\!\)\. You'll probably find this irritating\.
-								// Not only is text harder to read \- it breaks many of the tests\.
+#define ESCAPE_ALL_LITERALS 0		// CONFIGURATION - When ALLOW\_ALL\_LITERALS is enabled, ESCAPE\_ALL\_LITERALS converts all literals in rich text
+									// \(including punctuation\!\)\. You'll probably find this irritating\. Not only is text harder to read \- it breaks
+									// many of the tests\.
 
-#define LOG_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include string conversion details.
+#define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules add a text attachment to the rich text attributes
+
+#define LOG_CONVERSIONS 1			// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
 #import "NSAttributedString+Markdown.h"
 
@@ -173,6 +176,10 @@ typedef enum {
     MarkdownSpanCode, // not supported
 } MarkdownSpanType;
 
+typedef enum {
+	MarkdownBlockHorizontalRule,
+} MarkdownBlockType;
+
 static BOOL hasCharacterRelative(NSString *string, NSRange range, NSInteger offset, unichar character)
 {
 	BOOL hasCharacter = NO;
@@ -251,6 +258,16 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 			}
 		}
 	}];
+}
+
+static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType)
+{
+	NSArray<NSString *> *lines = [result.string componentsSeparatedByString:@"\n"];
+	for (NSString *line in lines) {
+#if LOG_CONVERSIONS
+		DebugLog(@"%s line = %@", "NSAttributedString+Markdown", line);
+#endif
+	}
 }
 
 static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
@@ -639,10 +656,14 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 	NSAssert(baseAttributes[NSFontAttributeName] != nil, @"A font attribute is required");
 	
 	// NOTE: The order of these operations is important. For example, emphasis won't be applied if a link attribute is detected.
-	
+
 	// start by creating a string that contains the Markdown syntax with the base attributes: the string will have attributes
 	// applied as the Markdown syntax is processed by updateAttributedString().
 	NSMutableAttributedString *result = [[NSMutableAttributedString alloc] initWithString:markdownString attributes:baseAttributes];
+
+#if ALLOW_HORIZONTAL_RULES
+	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule);
+#endif
 
 #if ALLOW_LINKS
     // replace [] and () markers with a link attribute
@@ -677,7 +698,7 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 
 #pragma mark -
 
-NS_INLINE NSRange emptyRange()
+NS_INLINE NSRange emptyRange(void)
 {
 	return NSMakeRange(NSNotFound, 0);
 }
