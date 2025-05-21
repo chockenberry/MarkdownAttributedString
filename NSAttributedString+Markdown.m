@@ -325,8 +325,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 #if 1
 		HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
 		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-		textAttachment.image = nil;
-		textAttachment.fileType = @"tot";
+		textAttachment.image = image;
 		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
 		textAttachment.thickness = thickness;
 		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
@@ -1150,6 +1149,9 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	// remove attributes that may break a range we're interested in (like paragraph styling from edits in UITextView)
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
+
+	NSData *testArchive = [NSKeyedArchiver archivedDataWithRootObject:self requiringSecureCoding:NO error:nil];
+	NSAttributedString *testUnarchive = [NSKeyedUnarchiver unarchiveObjectWithData:testArchive];
 
 	unichar character = NSAttachmentCharacter;
 	NSString *attachment = [NSString stringWithCharacters:&character length:1];
