@@ -18,6 +18,7 @@
 		44B1EE9923DB9254004E2E29 /* Examples.md in Resources */ = {isa = PBXBuildFile; fileRef = 44B1EE9723DB9254004E2E29 /* Examples.md */; };
 		44B1EE9A23DB9254004E2E29 /* Examples.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 44B1EE9823DB9254004E2E29 /* Examples.rtf */; };
 		44EE51F72DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = 44EE51F62DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m */; };
+		44EE51FC2DDE564900B6ECC2 /* CustomTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 44EE51FB2DDE564900B6ECC2 /* CustomTextView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +53,8 @@
 		44B1EE9823DB9254004E2E29 /* Examples.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Examples.rtf; sourceTree = "<group>"; };
 		44EE51F52DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HorizontalRuleTextAttachment.h; path = SampleApp/HorizontalRuleTextAttachment.h; sourceTree = "<group>"; };
 		44EE51F62DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = HorizontalRuleTextAttachment.m; path = SampleApp/HorizontalRuleTextAttachment.m; sourceTree = "<group>"; };
+		44EE51FA2DDE564900B6ECC2 /* CustomTextView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CustomTextView.h; sourceTree = "<group>"; };
+		44EE51FB2DDE564900B6ECC2 /* CustomTextView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CustomTextView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +114,8 @@
 				44B1EE8023DB90D5004E2E29 /* AppDelegate.m */,
 				44B1EE8223DB90D5004E2E29 /* ViewController.h */,
 				44B1EE8323DB90D5004E2E29 /* ViewController.m */,
+				44EE51FA2DDE564900B6ECC2 /* CustomTextView.h */,
+				44EE51FB2DDE564900B6ECC2 /* CustomTextView.m */,
 				44B1EE8523DB90D6004E2E29 /* Assets.xcassets */,
 				44B1EE8723DB90D6004E2E29 /* Main.storyboard */,
 				44B1EE9623DB9254004E2E29 /* Examples */,
@@ -244,6 +249,7 @@
 			files = (
 				44EE51F72DDCFE7500B6ECC2 /* HorizontalRuleTextAttachment.m in Sources */,
 				44B1EE8423DB90D5004E2E29 /* ViewController.m in Sources */,
+				44EE51FC2DDE564900B6ECC2 /* CustomTextView.m in Sources */,
 				44B1EE8C23DB90D6004E2E29 /* main.m in Sources */,
 				44B1EE9523DB91C9004E2E29 /* NSAttributedString+Markdown.m in Sources */,
 				44B1EE8123DB90D5004E2E29 /* AppDelegate.m in Sources */,

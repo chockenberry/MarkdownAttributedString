@@ -8,6 +8,8 @@
 
 #import "ViewController.h"
 
+#import "CustomTextView.h"
+
 static NSString *const savedStringKey = @"savedString";
 
 #define TESTING 1 // to get -markdownDebug
@@ -19,11 +21,11 @@ static NSString *const savedStringKey = @"savedString";
 
 @property (nonatomic, weak) IBOutlet NSTextField *richTextTextField;
 @property (nonatomic, weak) IBOutlet NSButton *richTextButton;
-@property (nonatomic, weak) IBOutlet NSTextView *richTextTextView;
+@property (nonatomic, weak) IBOutlet CustomTextView *richTextTextView;
 
 @property (nonatomic, weak) IBOutlet NSTextField *markdownTextField;
 @property (nonatomic, weak) IBOutlet NSButton *markdownButton;
-@property (nonatomic, weak) IBOutlet NSTextView *markdownTextView;
+@property (nonatomic, weak) IBOutlet CustomTextView *markdownTextView;
 
 @property (readonly) NSFont *richTextFont;
 @property (readonly) NSFont *markdownFont;
@@ -58,8 +60,17 @@ static NSString *const savedStringKey = @"savedString";
 
 	self.richTextTextView.font = self.richTextFont;
 	self.richTextTextView.typingAttributes = self.baseAttributes;
+	self.richTextTextView.baseAttributes = self.baseAttributes;
+#if !USE_STYLE_ATTRIBUTES
+	self.richTextTextView.styleAttributes = nil;
+#else
+	self.richTextTextView.styleAttributes = self.styleAttributes;
+#endif
+	
 	self.markdownTextView.font = self.markdownFont;
 	self.markdownTextView.typingAttributes = @{ NSFontAttributeName: self.markdownFont };
+	self.markdownTextView.baseAttributes = @{ NSFontAttributeName: self.markdownFont };
+	self.markdownTextView.styleAttributes = nil;
 }
 
 - (void)viewDidAppear
