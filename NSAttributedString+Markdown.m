@@ -296,7 +296,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
 				[horizontalRules addObject:horizontalRule];
 			}
-			else if ([trimmedString isEqualToString:@"***"]) {
+			else if ([trimmedString isEqualToString:@"****"]) {
 				NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
 				[horizontalRule setObject:@(2) forKey:horizontalRuleThicknessKey];
 				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
@@ -321,13 +321,23 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 		NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
 		NSRange range = rangeValue.rangeValue;
 		DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
-		
+
+#if 1
 		HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
 		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-		textAttachment.image = image;
+		textAttachment.image = nil;
+		textAttachment.fileType = @"tot";
 		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
 		textAttachment.thickness = thickness;
 		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+#else
+		NSTextAttachment *textAttachment = [[NSTextAttachment alloc] init];
+		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
+		textAttachment.image = nil;
+		textAttachment.fileType = @"tot";
+		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
+		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+#endif
 		NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
 		[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
 		[result replaceCharactersInRange:range withAttributedString:replacement];
@@ -1141,6 +1151,21 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
+	unichar character = NSAttachmentCharacter;
+	NSString *attachment = [NSString stringWithCharacters:&character length:1];
+	NSRange range = [cleanAttributedString.string rangeOfString:attachment];
+	while (range.location != NSNotFound) {
+		NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
+		id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
+		if ([attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
+			HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachmentObject;
+			NSLog(@"textAttachment: thickness = %f", textAttachment.thickness);
+		}
+		[cleanAttributedString replaceCharactersInRange:range withString:@"****"];
+		range = [cleanAttributedString.string rangeOfString:attachment];
+	}
+	
+
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
 	NSUInteger normalizedLength = normalizedAttributedString.length;
@@ -1196,12 +1221,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		
 		index = currentRange.location + currentRange.length;
 	}
-	
-	unichar character = NSAttachmentCharacter;
-	NSString *attachment = [NSString stringWithCharacters:&character length:1];
-	NSRange range = [normalizedString rangeOfString:attachment];
-	NSDictionary<NSString *, id> *attributes = [normalizedAttributedString attributesAtIndex:range.location effectiveRange:nil];
-	id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
 	
 	return [result copy];
 }
