@@ -35,6 +35,8 @@
 #import <UIKit/UIKit.h>
 #endif
 
+#define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules use text attachments in the rich text attributes
+
 #define ALLOW_CODE_MARKERS 0	// EXPERIMENTAL - Currently literals aren't escaped and style attributes are baked in (not using styleAttributes).
 
 NS_ASSUME_NONNULL_BEGIN

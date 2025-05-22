@@ -38,8 +38,6 @@
 									// \(including punctuation\!\)\. You'll probably find this irritating\. Not only is text harder to read \- it breaks
 									// many of the tests\.
 
-#define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules add a text attachment to the rich text attributes
-
 #define LOG_CONVERSIONS 0			// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
 #import "NSAttributedString+Markdown.h"
@@ -1326,7 +1324,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			rangeHasAttachment = YES;
 			if ([attachment isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
 				HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachment;
-				attachmentString = [NSString stringWithFormat:@"-%.1f-", textAttachment.thickness];
+				attachmentString = [NSString stringWithFormat:@"-%.0f%s%s-", textAttachment.thickness, (textAttachment.hasPadding ? "P" : ""), (textAttachment.hasSpaces ? "S" : "")];
 			}
 		}
 

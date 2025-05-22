@@ -9,7 +9,6 @@
 #import <XCTest/XCTest.h>
 
 
-#define TESTING 1 // to get -markdownDebug
 #import "NSAttributedString+Markdown.h"
 
 @interface NSAttributedString_MarkdownTests : XCTestCase
@@ -258,6 +257,19 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
 
+#if ALLOW_HORIZONTAL_RULES
+- (void)testHorizontalRules
+{
+	NSString *testString1 = @"* * *\n***\n*****\n  *  *  *  \n*** ***\n_ _ _\n___\n_____\n  _ _ _ \n___ ___\n --- \n";
+	// NOTE: There are NSAttachmentCharacter (U+FFFC) code points in the string below.
+	NSString *compareString = @"[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2PS-[\\n](  )[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1PS-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1P-[\\n](  )";
+	XCTAssert(checkMarkdownToRichText(testString1, compareString), @"Markdown to rich text test failed");
+	
+	// NOTE: Horizontal rules are normalized, so the arbitrary input in testString1 cannot be reused here.
+	NSString *testString2 = @"* * *\n***\n*****\n  * * *\n  *** * ***\n- - -\n---\n  -----\n  ---- - ----\n";
+	XCTAssert(checkMarkdownRoundTrip(testString2), @"Round-trip test failed");
+}
+#else
 - (void)testIgnoreHorizontalRules
 {
 	// https://daringfireball.net/projects/markdown/syntax#hr
@@ -268,6 +280,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
+#endif
 
 - (void)testForPeopleWhoDoMarkdownWrong
 {
