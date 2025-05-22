@@ -23,14 +23,16 @@
 	return image;
 }
 
-- (instancetype)initWithColor:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces
+- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces width:(NSInteger)width
 {
 	self = [super init];
 	if (self != nil) {
+		_font = font;
 		_color = color;
 		_thickness = thickness;
 		_hasPadding = hasPadding;
 		_hasSpaces = hasSpaces;
+		_width = width;
 	}
 	return self;
 }
@@ -38,6 +40,10 @@
 - (CGRect)attachmentBoundsForAttributes:(NSDictionary<NSAttributedStringKey,id> *)attributes location:(id<NSTextLocation>)location textContainer:(NSTextContainer *)textContainer proposedLineFragment:(CGRect)proposedLineFragment position:(CGPoint)position
 {
 	NSLog(@"%s proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	if (self.font != nil && textContainer.textView.window != nil) {
+		proposedLineFragment.size.height = floor((self.font.ascender + self.font.descender + self.font.leading) * textContainer.textView.window.backingScaleFactor);
+	}
+	NSLog(@"%s return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
 	return proposedLineFragment;
 }
 
@@ -88,10 +94,12 @@
 
 #pragma mark - NSSecureCoding
 
+NSString *const horizontalRuleFontCodingKey = @"font";
 NSString *const horizontalRuleColorCodingKey = @"color";
 NSString *const horizontalRuleThicknessCodingKey = @"thickness";
 NSString *const horizontalRulePaddingCodingKey = @"padding";
 NSString *const horizontalRuleSpacesCodingKey = @"spaces";
+NSString *const horizontalRuleWidthCodingKey = @"width";
 
 + (BOOL)supportsSecureCoding
 {
@@ -100,25 +108,30 @@ NSString *const horizontalRuleSpacesCodingKey = @"spaces";
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
-	[self.color encodeWithCoder:coder];
-
+	if (self.font != nil) {
+		[self.font encodeWithCoder:coder];
+	}
+	if (self.color != nil) {
+		[self.color encodeWithCoder:coder];
+	}
+	
 	[coder encodeDouble:self.thickness forKey:horizontalRuleThicknessCodingKey];
 	[coder encodeBool:self.hasPadding forKey:horizontalRulePaddingCodingKey];
 	[coder encodeBool:self.hasSpaces forKey:horizontalRuleSpacesCodingKey];
+	[coder encodeInteger:self.width forKey:horizontalRuleWidthCodingKey];
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)decoder
 {
+	NSFont *font = [[NSFont alloc] initWithCoder:decoder];
 	NSColor *color = [[NSColor alloc] initWithCoder:decoder];
-	if (color == nil) {
-		return nil;
-	}
 
 	CGFloat thickness = [decoder decodeDoubleForKey:horizontalRuleThicknessCodingKey];
 	BOOL hasPadding = [decoder decodeBoolForKey:horizontalRulePaddingCodingKey];
 	BOOL hasSpaces = [decoder decodeBoolForKey:horizontalRuleSpacesCodingKey];
+	NSInteger width = [decoder decodeIntegerForKey:horizontalRuleWidthCodingKey];
 
-	return [self initWithColor:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces];
+	return [self initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces width:width];
 }
 
 @end

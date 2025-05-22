@@ -1,3 +1,5 @@
+Examples
+********
 Strings can contain literals like \*\*, \_\_, \*, and \_.
 
 Bare symbols like * and _ are supported.

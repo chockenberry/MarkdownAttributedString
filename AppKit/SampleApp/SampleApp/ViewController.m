@@ -12,10 +12,9 @@
 
 static NSString *const savedStringKey = @"savedString";
 
-#define TESTING 1 // to get -markdownDebug
 #import "NSAttributedString+Markdown.h"
 
-#define USE_STYLE_ATTRIBUTES 1		// Enable this to use extended style attributes for the Markdown to attributed string conversions
+#define USE_STYLE_ATTRIBUTES 0		// Enable this to use extended style attributes for the Markdown to attributed string conversions
 
 @interface ViewController () <NSTextViewDelegate>
 
@@ -40,7 +39,6 @@ static NSString *const savedStringKey = @"savedString";
 {
 	[super viewDidLoad];
 	
-
 	NSString *localizedRichTextLabel = NSLocalizedString(@"_NSTextView_ with **Rich Text**", @"Rich Text Label");
 	NSString *localizedRichTextButton = NSLocalizedString(@"Show **Rich Text** Example", @"Rich Text Button");
 	NSString *localizedMarkdownLabel = NSLocalizedString(@"_NSTextView_ with **Markdown**", @"Markdown Label");
@@ -91,7 +89,7 @@ static NSString *const savedStringKey = @"savedString";
 
 - (NSFont *)richTextFont
 {
-	return [NSFont userFontOfSize:13.0];
+	return [NSFont userFontOfSize:14.0];
 }
 
 - (NSFont *)markdownFont
@@ -104,7 +102,7 @@ static NSString *const savedStringKey = @"savedString";
 #if !USE_STYLE_ATTRIBUTES
 	return @{ NSFontAttributeName: self.richTextFont };
 #else
-	return @{ NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Regular" size:14.0] };
+	return @{ NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Regular" size:24.0] };
 #endif
 }
 
@@ -112,15 +110,15 @@ static NSString *const savedStringKey = @"savedString";
 {
 	return @{
 		MarkdownStyleEmphasisSingle: @{
-				NSFontAttributeName: [NSFont fontWithName:@"Verdana-Italic" size:14.0],
+				NSFontAttributeName: [NSFont fontWithName:@"Verdana-Italic" size:24.0],
 				NSForegroundColorAttributeName: NSColor.systemRedColor
 		},
 		MarkdownStyleEmphasisDouble: @{
-				NSFontAttributeName: [NSFont fontWithName:@"LucidaGrande-Bold" size:14.0],
+				NSFontAttributeName: [NSFont fontWithName:@"LucidaGrande-Bold" size:24.0],
 				NSForegroundColorAttributeName: NSColor.systemGreenColor
 		},
 		MarkdownStyleEmphasisBoth: @{
-				NSFontAttributeName: [NSFont fontWithName:@"Palatino-BoldItalic" size:16.0],
+				NSFontAttributeName: [NSFont fontWithName:@"Palatino-BoldItalic" size:24.0],
 				NSForegroundColorAttributeName: NSColor.systemBlueColor
 		},
 	};

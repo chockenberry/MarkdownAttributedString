@@ -40,7 +40,7 @@
 
 #define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules add a text attachment to the rich text attributes
 
-#define LOG_CONVERSIONS 1			// CONFIGURATION - When enabled, debug logging will include string conversion details.
+#define LOG_CONVERSIONS 0			// CONFIGURATION - When enabled, debug logging will include string conversion details.
 
 #import "NSAttributedString+Markdown.h"
 
@@ -267,7 +267,7 @@ NSString *const horizontalRuleThicknessKey = @"thickness";
 NSString *const horizontalRulePaddingKey = @"padding";
 NSString *const horizontalRuleSpacesKey = @"spaces";
 
-static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
+static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<NSAttributedStringKey, id> *baseAttributes, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
 	NSString *scanString = [result.string copy];
 
@@ -298,6 +298,14 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 						CGFloat thickness = 0.0;
 						if ([firstCompressedCharacter isEqual:literalMinusSign]) {
 							NSCharacterSet *characterSet = [[NSCharacterSet characterSetWithCharactersInString:literalMinusSign] invertedSet];
+							NSRange range = [compressedString rangeOfCharacterFromSet:characterSet];
+							if (range.location == NSNotFound) {
+								thickness = 1.0;
+								haveRule = YES;
+							}
+						}
+						else if ([firstCompressedCharacter isEqual:literalUnderscore]) {
+							NSCharacterSet *characterSet = [[NSCharacterSet characterSetWithCharactersInString:literalUnderscore] invertedSet];
 							NSRange range = [compressedString rangeOfCharacterFromSet:characterSet];
 							if (range.location == NSNotFound) {
 								thickness = 1.0;
@@ -344,12 +352,14 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			
 #if 1
 			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
-			textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
+			//textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
 			textAttachment.image = image;
-			textAttachment.bounds = CGRectMake(0, 0, 300, 1);
+			//textAttachment.bounds = CGRectMake(0, 0, 300, 1);
 			textAttachment.thickness = thickness;
 			textAttachment.hasPadding = padding;
 			textAttachment.hasSpaces = spaces;
+			textAttachment.width = range.length - 1;
+			textAttachment.font = baseAttributes[NSFontAttributeName];
 			textAttachment.color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 #else
@@ -759,7 +769,7 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 	NSMutableAttributedString *result = [[NSMutableAttributedString alloc] initWithString:markdownString attributes:baseAttributes];
 
 #if ALLOW_HORIZONTAL_RULES
-	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule, styleAttributes);
+	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule, baseAttributes, styleAttributes);
 #endif
 
 #if ALLOW_LINKS
@@ -1173,33 +1183,50 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
-	unichar character = NSAttachmentCharacter;
-	NSString *attachment = [NSString stringWithCharacters:&character length:1];
-	NSRange range = [cleanAttributedString.string rangeOfString:attachment];
-	while (range.location != NSNotFound) {
-		NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
-		id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
-		if ([attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
-			HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachmentObject;
-			NSString *character = @"-";
-			if (textAttachment.thickness == 2.0) {
-				character = @"*";
-			}
-			NSString *replacement = nil;
-			if (textAttachment.hasSpaces) {
-				replacement = [NSString stringWithFormat:@"%@ %@ %@", character, character, character];
+	if (cleanAttributedString.length > 0) {
+		unichar character = NSAttachmentCharacter;
+		NSString *attachment = [NSString stringWithCharacters:&character length:1];
+		NSRange range = [cleanAttributedString.string rangeOfString:attachment];
+		while (range.location != NSNotFound) {
+			NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
+			id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
+			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
+				HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachmentObject;
+				NSInteger width = textAttachment.width;
+				if (textAttachment.hasSpaces) {
+					width = width - 3;
+				}
+				if (textAttachment.hasPadding) {
+					width = width - 2;
+				}
+				if (width < 3) {
+					width = 3;
+				}
+				NSInteger halfWidth = width / 2;
+				
+				NSString *character = @"-";
+				if (textAttachment.thickness == 2.0) {
+					character = @"*";
+				}
+				NSString *replacement = nil;
+				if (textAttachment.hasSpaces) {
+					NSString *divider = [@"" stringByPaddingToLength:halfWidth withString:character startingAtIndex:0];
+					replacement = [NSString stringWithFormat:@"%@ %@ %@", divider, character, divider];
+				}
+				else {
+					replacement = [@"" stringByPaddingToLength:width withString:character startingAtIndex:0];
+				}
+				if (textAttachment.hasPadding) {
+					replacement = [NSString stringWithFormat:@"  %@", replacement];
+				}
+				[cleanAttributedString replaceCharactersInRange:range withString:replacement];
 			}
 			else {
-				replacement = [NSString stringWithFormat:@"%@%@%@", character, character, character];
+				[cleanAttributedString replaceCharactersInRange:range withString:@""];
 			}
-			if (textAttachment.hasPadding) {
-				replacement = [NSString stringWithFormat:@"  %@  ", replacement];
-			}
-			[cleanAttributedString replaceCharactersInRange:range withString:replacement];
+			range = [cleanAttributedString.string rangeOfString:attachment];
 		}
-		range = [cleanAttributedString.string rangeOfString:attachment];
 	}
-	
 
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
@@ -1295,8 +1322,19 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				linkString = [NSString stringWithFormat:@"<%@>", string];
 			}
 		}
-		
-		NSString *rangeString = [NSString stringWithFormat:@"[%@](%s%s)%@", [self.string substringWithRange:range], (rangeHasBold ? "B" : " "), (rangeHasItalic ? "I" : " "), linkString];
+
+		BOOL rangeHasAttachment = NO;
+		NSString *attachmentString = @"";
+		id attachment = attributes[NSAttachmentAttributeName];
+		if (attachment) {
+			rangeHasAttachment = YES;
+			if ([attachment isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
+				HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachment;
+				attachmentString = [NSString stringWithFormat:@"-%.1f-", textAttachment.thickness];
+			}
+		}
+
+		NSString *rangeString = [NSString stringWithFormat:@"[%@](%s%s)%@%@", [self.string substringWithRange:range], (rangeHasBold ? "B" : " "), (rangeHasItalic ? "I" : " "), linkString, attachmentString];
 		[result appendString:rangeString];
 	}];
 	

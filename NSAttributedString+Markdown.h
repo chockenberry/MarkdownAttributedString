@@ -71,10 +71,8 @@ extern MarkdownStyleKey MarkdownStyleCode;			                // EXPERIMENTAL - a
 
 @property (nonatomic, readonly) NSString *markdownRepresentation;
 
-#ifdef TESTING
 // for tests, to quickly check the placement of attributes
 @property (nonatomic, readonly) NSString *markdownDebug;
-#endif
 
 @end
 

@@ -12,14 +12,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HorizontalRuleTextAttachment : NSTextAttachment <NSSecureCoding>
 
-- (instancetype)initWithColor:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces;
+- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces width:(NSInteger)width;
 
 @property (class, nonatomic, readonly, strong) NSImage* placeholderImage;
 
 @property (nonatomic, strong) NSColor *color;
-@property (nonatomic, assign) CGFloat thickness;	// "---" or "___" = thin, "***" = thick
-@property (nonatomic, assign) BOOL hasPadding;		// "  ***  " or "  ---  " or " ___  "
-@property (nonatomic, assign) BOOL hasSpaces;		// "* * *" or "- - -" or "_ _ _"
+@property (nonatomic, strong) NSFont *font;
+@property (nonatomic, assign) CGFloat thickness;	// "---" = thin, "***" = thick
+@property (nonatomic, assign) BOOL hasPadding;		// "  ***  " or "  ---  "
+@property (nonatomic, assign) BOOL hasSpaces;		// "* * *" or "- - -"
+@property (nonatomic, assign) NSInteger width;		// "***" = 3, "-----" = 5, "-- - --" = 7
 
 @end
 

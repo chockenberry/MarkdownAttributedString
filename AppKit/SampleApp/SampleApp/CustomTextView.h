@@ -8,7 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#define TESTING 1 // to get -markdownDebug
 #import "NSAttributedString+Markdown.h"
 
 NS_ASSUME_NONNULL_BEGIN
