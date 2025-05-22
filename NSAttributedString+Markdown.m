@@ -282,9 +282,9 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			if (lineString.length > 0) {
 				NSString *firstLineCharacter = [lineString substringToIndex:1];
 				/*
-				 Per the Markdown Syntax
-				 You can produce a horizontal rule tag (<hr />) by placing three or more hyphens, asterisks, or underscores on a line by themselves.
-				 If you wish, you may use spaces between the hyphens or asterisks
+				 Per the Markdown Syntax documentation:
+					You can produce a horizontal rule tag (<hr />) by placing three or more hyphens, asterisks, or underscores on a line by themselves.
+					If you wish, you may use spaces between the hyphens or asterisks
 				 */
 				NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 				
@@ -350,7 +350,6 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			NSRange range = rangeValue.rangeValue;
 			DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
 			
-#if 1
 			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
 			//textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
 			textAttachment.image = image;
@@ -362,14 +361,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			textAttachment.font = baseAttributes[NSFontAttributeName];
 			textAttachment.color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
-#else
-			NSTextAttachment *textAttachment = [[NSTextAttachment alloc] init];
-			textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-			textAttachment.image = nil;
-			textAttachment.fileType = @"tot";
-			textAttachment.bounds = CGRectMake(0, 0, 300, 1);
-			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
-#endif
+
 			NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
 			[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
 			[result replaceCharactersInRange:range withAttributedString:replacement];
@@ -387,6 +379,9 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 	
 	// check the input for horizontal rules and ignore markers that occur within their line's range
 	NSMutableArray *horizontalRuleRangeValues = [NSMutableArray array];
+#if ALLOW_HORIZONTAL_RULES
+	// the horizontal rules have already been converted to text attachments, so no conflict checks are needed.
+#else
 	NSString *rulerString = [beginMarker substringToIndex:1];
 	if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
 		NSRange checkRange = NSMakeRange(0, 1);
@@ -404,7 +399,8 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 	}
-
+#endif
+	
 #if LOG_CONVERSIONS
 	DebugLog(@"%s <<<< ---- '%@ %@ %@' start", "NSAttributedString+Markdown", (beginMarker ? beginMarker : @""), (dividerMarker ? dividerMarker : @""), (endMarker ? endMarker : @""));
 #endif
