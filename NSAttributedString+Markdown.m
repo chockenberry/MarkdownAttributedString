@@ -264,84 +264,107 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 
 NSString *const horizontalRuleRangeKey = @"range";
 NSString *const horizontalRuleThicknessKey = @"thickness";
-NSString *const horizontalRuleTypeKey = @"type";
+NSString *const horizontalRulePaddingKey = @"padding";
+NSString *const horizontalRuleSpacesKey = @"spaces";
 
-static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType)
+static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
-	/*
-	NSArray<NSString *> *lines = [result.string componentsSeparatedByString:@"\n"];
-	for (NSString *line in lines) {
-#if LOG_CONVERSIONS
-		DebugLog(@"%s line = %@", "NSAttributedString+Markdown", line);
-#endif
-	}
-*/
-	// see the note below about these two variables
 	NSString *scanString = [result.string copy];
-	NSUInteger mutationOffset = 0;
-	
-	// check the input for horizontal rules and ignore markers that occur within their line's range
-	NSMutableArray<NSDictionary *> *horizontalRules = [NSMutableArray array];
-	//NSString *rulerString = [beginMarker substringToIndex:1];
-	//if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
+
+	if (blockType == MarkdownBlockHorizontalRule) {
+		// check the input for horizontal rules and ignore markers that occur within their line's range
+		NSMutableArray<NSDictionary *> *horizontalRules = [NSMutableArray array];
 		NSRange checkRange = NSMakeRange(0, 1);
 		while (checkRange.location + checkRange.length < scanString.length) {
 			NSRange lineRange = [scanString lineRangeForRange:checkRange];
 			NSString *lineString = [scanString substringWithRange:lineRange];
 			
-			NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-			if ([trimmedString isEqualToString:@"---"]) {
-				NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
-				[horizontalRule setObject:@(1) forKey:horizontalRuleThicknessKey];
-				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
-				[horizontalRules addObject:horizontalRule];
+			if (lineString.length > 0) {
+				NSString *firstLineCharacter = [lineString substringToIndex:1];
+				/*
+				 Per the Markdown Syntax
+				 You can produce a horizontal rule tag (<hr />) by placing three or more hyphens, asterisks, or underscores on a line by themselves.
+				 If you wish, you may use spaces between the hyphens or asterisks
+				 */
+				NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+				
+				if (trimmedString.length > 0) {
+					BOOL haveRule = NO;
+					BOOL hasPadding = [firstLineCharacter isEqualToString:@" "];
+					NSString *compressedString = [trimmedString stringByReplacingOccurrencesOfString:@" " withString:@""];
+					if (compressedString.length >= 3) {
+						NSString *firstCompressedCharacter = [compressedString substringToIndex:1];
+						BOOL hasSpaces = ![trimmedString isEqualToString:compressedString];
+						CGFloat thickness = 0.0;
+						if ([firstCompressedCharacter isEqual:literalMinusSign]) {
+							NSCharacterSet *characterSet = [[NSCharacterSet characterSetWithCharactersInString:literalMinusSign] invertedSet];
+							NSRange range = [compressedString rangeOfCharacterFromSet:characterSet];
+							if (range.location == NSNotFound) {
+								thickness = 1.0;
+								haveRule = YES;
+							}
+						}
+						else if ([firstCompressedCharacter isEqual:literalAsterisk]) {
+							NSCharacterSet *characterSet = [[NSCharacterSet characterSetWithCharactersInString:literalAsterisk] invertedSet];
+							NSRange range = [compressedString rangeOfCharacterFromSet:characterSet];
+							if (range.location == NSNotFound) {
+								thickness = 2.0;
+								haveRule = YES;
+							}
+						}
+						
+						if (haveRule) {
+							NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
+							[horizontalRule setObject:@(thickness) forKey:horizontalRuleThicknessKey];
+							[horizontalRule setObject:@(hasPadding) forKey:horizontalRulePaddingKey];
+							[horizontalRule setObject:@(hasSpaces) forKey:horizontalRuleSpacesKey];
+							[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
+							[horizontalRules addObject:horizontalRule];
+						}
+					}
+				}
 			}
-			else if ([trimmedString isEqualToString:@"****"]) {
-				NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
-				[horizontalRule setObject:@(2) forKey:horizontalRuleThicknessKey];
-				[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
-				[horizontalRules addObject:horizontalRule];
-			}
-
+			
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
-	//}
-
-	// size is in points and will be included in RTFD package as a TIFF file
-	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(300, 1)];
-	[image lockFocus];
-	[NSColor.blackColor set];
-	NSRect fillRect = NSMakeRect(0, 0, 300, 1);
-	NSRectFill(fillRect);
-	[image unlockFocus];
-
-	for (NSDictionary *horizontalRule in horizontalRules.reverseObjectEnumerator) {
-		NSNumber *thicknessValue = [horizontalRule objectForKey:horizontalRuleThicknessKey];
-		CGFloat thickness = thicknessValue.doubleValue;
-		NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
-		NSRange range = rangeValue.rangeValue;
-		DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
-
+		
+		// size is in points and will be included in RTFD package as a TIFF file
+		NSImage *image = HorizontalRuleTextAttachment.placeholderImage;
+		
+		for (NSDictionary *horizontalRule in horizontalRules.reverseObjectEnumerator) {
+			NSNumber *thicknessValue = [horizontalRule objectForKey:horizontalRuleThicknessKey];
+			CGFloat thickness = thicknessValue.doubleValue;
+			NSNumber *paddingValue = [horizontalRule objectForKey:horizontalRulePaddingKey];
+			BOOL padding = paddingValue.boolValue;
+			NSNumber *spacesValue = [horizontalRule objectForKey:horizontalRuleSpacesKey];
+			BOOL spaces = spacesValue.boolValue;
+			NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
+			NSRange range = rangeValue.rangeValue;
+			DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
+			
 #if 1
-		HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
-		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-		textAttachment.image = image;
-		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
-		textAttachment.thickness = thickness;
-		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
+			textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
+			textAttachment.image = image;
+			textAttachment.bounds = CGRectMake(0, 0, 300, 1);
+			textAttachment.thickness = thickness;
+			textAttachment.hasPadding = padding;
+			textAttachment.hasSpaces = spaces;
+			textAttachment.color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 #else
-		NSTextAttachment *textAttachment = [[NSTextAttachment alloc] init];
-		textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-		textAttachment.image = nil;
-		textAttachment.fileType = @"tot";
-		textAttachment.bounds = CGRectMake(0, 0, 300, 1);
-		NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+			NSTextAttachment *textAttachment = [[NSTextAttachment alloc] init];
+			textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
+			textAttachment.image = nil;
+			textAttachment.fileType = @"tot";
+			textAttachment.bounds = CGRectMake(0, 0, 300, 1);
+			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 #endif
-		NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
-		[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
-		[result replaceCharactersInRange:range withAttributedString:replacement];
+			NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
+			[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
+			[result replaceCharactersInRange:range withAttributedString:replacement];
+		}
 	}
-
 }
 
 static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
@@ -736,7 +759,7 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 	NSMutableAttributedString *result = [[NSMutableAttributedString alloc] initWithString:markdownString attributes:baseAttributes];
 
 #if ALLOW_HORIZONTAL_RULES
-	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule);
+	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule, styleAttributes);
 #endif
 
 #if ALLOW_LINKS
@@ -1150,9 +1173,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
-	NSData *testArchive = [NSKeyedArchiver archivedDataWithRootObject:self requiringSecureCoding:NO error:nil];
-	NSAttributedString *testUnarchive = [NSKeyedUnarchiver unarchiveObjectWithData:testArchive];
-
 	unichar character = NSAttachmentCharacter;
 	NSString *attachment = [NSString stringWithCharacters:&character length:1];
 	NSRange range = [cleanAttributedString.string rangeOfString:attachment];
@@ -1161,9 +1181,22 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
 		if ([attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
 			HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachmentObject;
-			NSLog(@"textAttachment: thickness = %f", textAttachment.thickness);
+			NSString *character = @"-";
+			if (textAttachment.thickness == 2.0) {
+				character = @"*";
+			}
+			NSString *replacement = nil;
+			if (textAttachment.hasSpaces) {
+				replacement = [NSString stringWithFormat:@"%@ %@ %@", character, character, character];
+			}
+			else {
+				replacement = [NSString stringWithFormat:@"%@%@%@", character, character, character];
+			}
+			if (textAttachment.hasPadding) {
+				replacement = [NSString stringWithFormat:@"  %@  ", replacement];
+			}
+			[cleanAttributedString replaceCharactersInRange:range withString:replacement];
 		}
-		[cleanAttributedString replaceCharactersInRange:range withString:@"****"];
 		range = [cleanAttributedString.string rangeOfString:attachment];
 	}
 	

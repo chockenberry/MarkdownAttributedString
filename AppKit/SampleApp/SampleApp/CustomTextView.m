@@ -12,6 +12,11 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 
 @implementation CustomTextView
 
+- (NSArray<NSSharingService *> *)sharingServicePicker:(NSSharingServicePicker *)sharingServicePicker sharingServicesForItems:(NSArray *)items proposedSharingServices:(NSArray<NSSharingService *> *)proposedServices
+{
+	return @[];
+}
+
 - (void)copy:(id)sender
 {
 	NSLog(@"%s sender = %@", __PRETTY_FUNCTION__, sender);

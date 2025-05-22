@@ -10,10 +10,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface HorizontalRuleTextAttachment : NSTextAttachment
+@interface HorizontalRuleTextAttachment : NSTextAttachment <NSSecureCoding>
 
-@property (nonatomic, assign) CGFloat thickness;
-@property (nonatomic, assign) BOOL hasDot;
+- (instancetype)initWithColor:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces;
+
+@property (class, nonatomic, readonly, strong) NSImage* placeholderImage;
+
+@property (nonatomic, strong) NSColor *color;
+@property (nonatomic, assign) CGFloat thickness;	// "---" or "___" = thin, "***" = thick
+@property (nonatomic, assign) BOOL hasPadding;		// "  ***  " or "  ---  " or " ___  "
+@property (nonatomic, assign) BOOL hasSpaces;		// "* * *" or "- - -" or "_ _ _"
 
 @end
 

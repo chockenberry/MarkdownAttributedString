@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface CustomTextView : NSTextView
+@interface CustomTextView : NSTextView <NSSharingServicePickerDelegate>
 
 @property (nonatomic, strong) NSDictionary<NSAttributedStringKey, id> *baseAttributes;
 @property (nonatomic, strong, nullable) NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes;

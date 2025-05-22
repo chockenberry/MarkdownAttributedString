@@ -15,7 +15,7 @@ static NSString *const savedStringKey = @"savedString";
 #define TESTING 1 // to get -markdownDebug
 #import "NSAttributedString+Markdown.h"
 
-#define USE_STYLE_ATTRIBUTES 0		// Enable this to use extended style attributes for the Markdown to attributed string conversions
+#define USE_STYLE_ATTRIBUTES 1		// Enable this to use extended style attributes for the Markdown to attributed string conversions
 
 @interface ViewController () <NSTextViewDelegate>
 
@@ -58,6 +58,8 @@ static NSString *const savedStringKey = @"savedString";
 {
 	[super viewWillAppear];
 
+	self.richTextTextView.allowsImageEditing = NO;
+	
 	self.richTextTextView.font = self.richTextFont;
 	self.richTextTextView.typingAttributes = self.baseAttributes;
 	self.richTextTextView.baseAttributes = self.baseAttributes;
