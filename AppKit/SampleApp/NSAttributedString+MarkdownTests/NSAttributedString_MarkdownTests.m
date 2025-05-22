@@ -260,8 +260,11 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 #if ALLOW_HORIZONTAL_RULES
 - (void)testHorizontalRules
 {
+	// https://daringfireball.net/projects/markdown/syntax#hr
+	// "You can produce a horizontal rule tag by placing three or more hyphens, asterisks, or underscores on a line by themselves. If you wish, you may use spaces between the hyphens or asterisks."
+
+	// NOTE: There are NSAttachmentCharacter (U+FFFC) code points in the compareString below.
 	NSString *testString1 = @"* * *\n***\n*****\n  *  *  *  \n*** ***\n_ _ _\n___\n_____\n  _ _ _ \n___ ___\n --- \n";
-	// NOTE: There are NSAttachmentCharacter (U+FFFC) code points in the string below.
 	NSString *compareString = @"[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2PS-[\\n](  )[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1PS-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1P-[\\n](  )";
 	XCTAssert(checkMarkdownToRichText(testString1, compareString), @"Markdown to rich text test failed");
 	
