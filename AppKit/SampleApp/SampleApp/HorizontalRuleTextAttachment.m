@@ -99,7 +99,6 @@ static NSString *const horizontalRuleColorCodingKey = @"color";
 static NSString *const horizontalRuleThicknessCodingKey = @"thickness";
 static NSString *const horizontalRulePaddingCodingKey = @"padding";
 static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
-//static NSString *const horizontalRuleWidthCodingKey = @"width";
 
 + (BOOL)supportsSecureCoding
 {
@@ -133,7 +132,6 @@ static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
 	CGFloat thickness = [decoder decodeDoubleForKey:horizontalRuleThicknessCodingKey];
 	BOOL hasPadding = [decoder decodeBoolForKey:horizontalRulePaddingCodingKey];
 	BOOL hasSpaces = [decoder decodeBoolForKey:horizontalRuleSpacesCodingKey];
-	//NSInteger width = [decoder decodeIntegerForKey:horizontalRuleWidthCodingKey];
 
 	NSValue *value = [[NSValue alloc] initWithCoder:decoder];
 	NSRange range = value.rangeValue;
