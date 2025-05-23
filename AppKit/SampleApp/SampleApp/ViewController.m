@@ -13,6 +13,7 @@
 static NSString *const savedStringKey = @"savedString";
 
 #import "NSAttributedString+Markdown.h"
+#import "HorizontalRuleTextAttachment.h"
 
 #define USE_STYLE_ATTRIBUTES 0		// Enable this to use extended style attributes for the Markdown to attributed string conversions
 
@@ -125,6 +126,32 @@ static NSString *const savedStringKey = @"savedString";
 }
 
 #pragma mark - Actions
+
+- (IBAction)insertHorizontalRule:(id)sender
+{
+	NSRange range = self.richTextTextView.selectedRange;
+	
+	NSFont *font = self.baseAttributes[NSFontAttributeName];
+#if !USE_STYLE_ATTRIBUTES
+	NSColor *color = nil;
+#else
+	NSColor *color = self.styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+#endif
+
+	HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES width:20];
+	NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
+
+	NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
+	NSAttributedString *newline = [[NSAttributedString alloc] initWithString:@"\n"];
+	[replacement insertAttributedString:newline atIndex:0];
+	[replacement appendAttributedString:newline];
+
+	if ([self.richTextTextView shouldChangeTextInRange:range replacementString:replacement.string]) {
+		[self.richTextTextView.textStorage replaceCharactersInRange:range withAttributedString:replacement];
+		[self.richTextTextView didChangeText];
+	}
+	//[self.richTextTextView.textStorage replaceCharactersInRange:range withAttributedString:replacement];
+}
 
 - (IBAction)setRichTextExamples:(id)sender
 {

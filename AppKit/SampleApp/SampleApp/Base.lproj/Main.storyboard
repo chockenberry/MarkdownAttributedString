@@ -703,6 +703,16 @@
                                     <action selector="setMarkdownExamples:" target="XfG-lQ-9wD" id="gcA-lZ-lGe"/>
                                 </connections>
                             </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Kry-yh-gSL">
+                                <rect key="frame" x="414" y="582" width="165" height="32"/>
+                                <buttonCell key="cell" type="push" title="Insert Horizontal Rule" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Sh6-zC-sSi">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="insertHorizontalRule:" target="XfG-lQ-9wD" id="aS0-et-KHO"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstItem="aZu-SB-nBF" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="20" id="14L-I6-I7V"/>
@@ -717,10 +727,12 @@
                             <constraint firstItem="aZu-SB-nBF" firstAttribute="top" secondItem="Q1u-Lr-oDx" secondAttribute="bottom" constant="8" id="XZS-Nw-Nc0"/>
                             <constraint firstItem="JzY-WK-9Ry" firstAttribute="firstBaseline" secondItem="7Nq-tB-NbV" secondAttribute="firstBaseline" id="Yyf-20-Oxg"/>
                             <constraint firstAttribute="trailing" secondItem="aZu-SB-nBF" secondAttribute="trailing" constant="20" id="ZbR-BZ-YBR"/>
+                            <constraint firstItem="cWZ-ON-nT5" firstAttribute="leading" secondItem="Kry-yh-gSL" secondAttribute="trailing" constant="12" symbolic="YES" id="a2Q-Xk-LWK"/>
                             <constraint firstAttribute="trailing" secondItem="cWZ-ON-nT5" secondAttribute="trailing" constant="20" id="ddA-tM-GZi"/>
                             <constraint firstItem="7Nq-tB-NbV" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="JzY-WK-9Ry" secondAttribute="trailing" id="mZL-V8-CYI"/>
                             <constraint firstItem="JzY-WK-9Ry" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="20" id="n5M-1q-5nn"/>
                             <constraint firstItem="zuv-VZ-Dq6" firstAttribute="top" secondItem="aZu-SB-nBF" secondAttribute="bottom" constant="64" id="wUm-6n-iaP"/>
+                            <constraint firstItem="Kry-yh-gSL" firstAttribute="firstBaseline" secondItem="Q1u-Lr-oDx" secondAttribute="firstBaseline" id="wZy-6W-F5y"/>
                             <constraint firstItem="Q1u-Lr-oDx" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" constant="20" id="xOz-9k-m8S"/>
                         </constraints>
                     </view>

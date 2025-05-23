@@ -10,19 +10,6 @@
 
 @implementation HorizontalRuleTextAttachment
 
-+ (NSImage *)placeholderImage
-{
-	// size is in points and will be included in RTFD package as a TIFF file
-	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(300, 1)];
-	[image lockFocus];
-	[NSColor.blackColor set];
-	NSRect fillRect = NSMakeRect(0, 0, 300, 1);
-	NSRectFill(fillRect);
-	[image unlockFocus];
-	
-	return image;
-}
-
 - (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces width:(NSInteger)width
 {
 	self = [super init];
@@ -33,6 +20,10 @@
 		_hasPadding = hasPadding;
 		_hasSpaces = hasSpaces;
 		_width = width;
+		
+		// NOTE: Placeholder image has size in points and will be included in RTFD package as a TIFF file.
+		NSRect placeholderBounds = NSMakeRect(0, 0, 300, thickness + 2);
+		self.image = [self imageForBounds:placeholderBounds];
 	}
 	return self;
 }
@@ -94,12 +85,12 @@
 
 #pragma mark - NSSecureCoding
 
-NSString *const horizontalRuleFontCodingKey = @"font";
-NSString *const horizontalRuleColorCodingKey = @"color";
-NSString *const horizontalRuleThicknessCodingKey = @"thickness";
-NSString *const horizontalRulePaddingCodingKey = @"padding";
-NSString *const horizontalRuleSpacesCodingKey = @"spaces";
-NSString *const horizontalRuleWidthCodingKey = @"width";
+static NSString *const horizontalRuleFontCodingKey = @"font";
+static NSString *const horizontalRuleColorCodingKey = @"color";
+static NSString *const horizontalRuleThicknessCodingKey = @"thickness";
+static NSString *const horizontalRulePaddingCodingKey = @"padding";
+static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
+static NSString *const horizontalRuleWidthCodingKey = @"width";
 
 + (BOOL)supportsSecureCoding
 {

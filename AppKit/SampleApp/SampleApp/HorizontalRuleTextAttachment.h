@@ -14,14 +14,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces width:(NSInteger)width;
 
-@property (class, nonatomic, readonly, strong) NSImage* placeholderImage;
-
-@property (nonatomic, strong) NSColor *color;
-@property (nonatomic, strong) NSFont *font;
-@property (nonatomic, assign) CGFloat thickness;	// "---" = thin, "***" = thick
-@property (nonatomic, assign) BOOL hasPadding;		// "  ***  " or "  ---  "
-@property (nonatomic, assign) BOOL hasSpaces;		// "* * *" or "- - -"
-@property (nonatomic, assign) NSInteger width;		// "***" = 3, "-----" = 5, "-- - --" = 7
+@property (nonatomic, strong, readonly) NSColor *color;
+@property (nonatomic, strong, readonly) NSFont *font;
+@property (nonatomic, assign, readonly) CGFloat thickness;	// "***" = 2.0, "---" = 1.0
+@property (nonatomic, assign, readonly) BOOL hasPadding;	// "  ***  " or "  ------  "
+@property (nonatomic, assign, readonly) BOOL hasSpaces;		// "* * *" or "--- - ---"
+@property (nonatomic, assign, readonly) NSInteger width;	// "***" = 3, "-----" = 5, "-- - --" = 7
 
 @end
 

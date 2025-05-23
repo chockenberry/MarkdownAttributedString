@@ -334,30 +334,22 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 		
-		// size is in points and will be included in RTFD package as a TIFF file
-		NSImage *image = HorizontalRuleTextAttachment.placeholderImage;
-		
 		for (NSDictionary *horizontalRule in horizontalRules.reverseObjectEnumerator) {
 			NSNumber *thicknessValue = [horizontalRule objectForKey:horizontalRuleThicknessKey];
 			CGFloat thickness = thicknessValue.doubleValue;
 			NSNumber *paddingValue = [horizontalRule objectForKey:horizontalRulePaddingKey];
-			BOOL padding = paddingValue.boolValue;
+			BOOL hasPadding = paddingValue.boolValue;
 			NSNumber *spacesValue = [horizontalRule objectForKey:horizontalRuleSpacesKey];
-			BOOL spaces = spacesValue.boolValue;
+			BOOL hasSpaces = spacesValue.boolValue;
 			NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
 			NSRange range = rangeValue.rangeValue;
 			DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
 			
-			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] init];
-			//textAttachment.contents = [NSKeyedArchiver archivedDataWithRootObject:horizontalRule requiringSecureCoding:NO error:nil];
-			textAttachment.image = image;
-			//textAttachment.bounds = CGRectMake(0, 0, 300, 1);
-			textAttachment.thickness = thickness;
-			textAttachment.hasPadding = padding;
-			textAttachment.hasSpaces = spaces;
-			textAttachment.width = range.length - 1;
-			textAttachment.font = baseAttributes[NSFontAttributeName];
-			textAttachment.color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+			NSInteger width = range.length - 1;
+			NSFont *font = baseAttributes[NSFontAttributeName];
+			NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+
+			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces width:width];
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 
 			NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
@@ -1182,6 +1174,20 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		NSString *attachment = [NSString stringWithCharacters:&character length:1];
 		NSRange range = [cleanAttributedString.string rangeOfString:attachment];
 		while (range.location != NSNotFound) {
+			BOOL needsPrefix = NO;
+			if (range.location > 0) {
+				NSString *prefix = [cleanAttributedString.string substringWithRange:NSMakeRange(range.location - 1, 1)];
+				if (![prefix isEqualToString:@"\n"]) {
+					needsPrefix = YES;
+				}
+			}
+			BOOL needsSuffix = NO;
+			if (range.location + range.length < cleanAttributedString.string.length - 1) {
+				NSString *suffix = [cleanAttributedString.string substringWithRange:NSMakeRange(range.location + range.length, 1)];
+				if (![suffix isEqualToString:@"\n"]) {
+					needsSuffix = YES;
+				}
+			}
 			NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
 			id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
 			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
@@ -1212,6 +1218,12 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				}
 				if (textAttachment.hasPadding) {
 					replacement = [NSString stringWithFormat:@"  %@", replacement];
+				}
+				if (needsPrefix) {
+					replacement = [@"\n" stringByAppendingString:replacement];
+				}
+				if (needsSuffix) {
+					replacement = [replacement stringByAppendingString:@"\n"];
 				}
 				[cleanAttributedString replaceCharactersInRange:range withString:replacement];
 			}
