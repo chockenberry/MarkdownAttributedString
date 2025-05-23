@@ -27,7 +27,8 @@
 		
 		// NOTE: Placeholder image has size in points and will be included in RTFD package as a TIFF file.
 		NSRect placeholderBounds = NSMakeRect(0, 0, 300, thickness + 2);
-		self.image = [self imageForBounds:placeholderBounds];
+		self.image = [self imageForBounds:placeholderBounds withColor:nil];
+		self.bounds = placeholderBounds;
 	}
 	return self;
 }
@@ -49,14 +50,22 @@
 
 - (NSImage *)imageForBounds:(CGRect)imageBounds textContainer:(NSTextContainer *)textContainer characterIndex:(NSUInteger)charIndex
 {
-	return [self imageForBounds:imageBounds];
+	self.image = [self imageForBounds:imageBounds withColor:nil];
+	self.bounds = imageBounds;
+
+	return [self imageForBounds:imageBounds withColor:self.color];
 }
 
-- (NSImage *)imageForBounds:(CGRect)imageBounds
+- (NSImage *)imageForBounds:(CGRect)imageBounds withColor:(NSColor *)color
 {
 	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(imageBounds.size.width, imageBounds.size.height)];
 	[image lockFocus];
-	[self.color set];
+	if (color != nil) {
+		[color set];
+	}
+	else {
+		[NSColor.blackColor set];
+	}
 	
 	CGFloat padding = 0.0;
 	if (self.hasPadding) {

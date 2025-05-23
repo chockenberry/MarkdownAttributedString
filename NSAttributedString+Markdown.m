@@ -3,10 +3,10 @@
 //  Tot
 //
 //  Created by Craig Hockenberry on 12/14/19.
-//  Copyright © 2020 The Iconfactory. All rights reserved.
+//  Copyright © 2020-2025 The Iconfactory. All rights reserved.
 //
 /*
-	Copyright (c) 2020 The Iconfactory, Inc. <https://iconfactory.com>
+	Copyright (c) 2020-2025 The Iconfactory, Inc. <https://iconfactory.com>
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal

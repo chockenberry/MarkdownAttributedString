@@ -15,7 +15,7 @@ static NSString *const savedStringKey = @"savedString";
 #import "NSAttributedString+Markdown.h"
 #import "HorizontalRuleTextAttachment.h"
 
-#define USE_STYLE_ATTRIBUTES 0		// Enable this to use extended style attributes for the Markdown to attributed string conversions
+#define USE_STYLE_ATTRIBUTES 1		// Enable this to use extended style attributes for the Markdown to attributed string conversions
 
 @interface ViewController () <NSTextViewDelegate>
 
@@ -103,7 +103,7 @@ static NSString *const savedStringKey = @"savedString";
 #if !USE_STYLE_ATTRIBUTES
 	return @{ NSFontAttributeName: self.richTextFont };
 #else
-	return @{ NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Regular" size:24.0] };
+	return @{ NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Regular" size:14.0] };
 #endif
 }
 
@@ -111,15 +111,18 @@ static NSString *const savedStringKey = @"savedString";
 {
 	return @{
 		MarkdownStyleEmphasisSingle: @{
-				NSFontAttributeName: [NSFont fontWithName:@"Verdana-Italic" size:24.0],
+				NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Italic" size:14.0],
+				//NSFontAttributeName: [NSFont fontWithName:@"Verdana-Italic" size:14.0],
 				NSForegroundColorAttributeName: NSColor.systemRedColor
 		},
 		MarkdownStyleEmphasisDouble: @{
-				NSFontAttributeName: [NSFont fontWithName:@"LucidaGrande-Bold" size:24.0],
+				NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-Bold" size:14.0],
+				//NSFontAttributeName: [NSFont fontWithName:@"LucidaGrande-Bold" size:14.0],
 				NSForegroundColorAttributeName: NSColor.systemGreenColor
 		},
 		MarkdownStyleEmphasisBoth: @{
-				NSFontAttributeName: [NSFont fontWithName:@"Palatino-BoldItalic" size:24.0],
+				NSFontAttributeName: [NSFont fontWithName:@"AvenirNext-BoldItalic" size:14.0],
+				//NSFontAttributeName: [NSFont fontWithName:@"Palatino-BoldItalic" size:14.0],
 				NSForegroundColorAttributeName: NSColor.systemBlueColor
 		},
 	};
