@@ -138,7 +138,7 @@ static NSString *const savedStringKey = @"savedString";
 	NSColor *color = self.styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 #endif
 
-	HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES width:20];
+	HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES range:NSMakeRange(range.location, 20)];
 	NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 
 	NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];

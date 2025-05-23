@@ -260,18 +260,13 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 	}];
 }
 
-NSString *const horizontalRuleRangeKey = @"range";
-NSString *const horizontalRuleThicknessKey = @"thickness";
-NSString *const horizontalRulePaddingKey = @"padding";
-NSString *const horizontalRuleSpacesKey = @"spaces";
-
 static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<NSAttributedStringKey, id> *baseAttributes, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
 	NSString *scanString = [result.string copy];
 
 	if (blockType == MarkdownBlockHorizontalRule) {
 		// check the input for horizontal rules and ignore markers that occur within their line's range
-		NSMutableArray<NSDictionary *> *horizontalRules = [NSMutableArray array];
+		NSMutableArray<HorizontalRuleTextAttachment *> *textAttachments = [NSMutableArray array];
 		NSRange checkRange = NSMakeRange(0, 1);
 		while (checkRange.location + checkRange.length < scanString.length) {
 			NSRange lineRange = [scanString lineRangeForRange:checkRange];
@@ -320,12 +315,12 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 						}
 						
 						if (haveRule) {
-							NSMutableDictionary *horizontalRule = [NSMutableDictionary dictionary];
-							[horizontalRule setObject:@(thickness) forKey:horizontalRuleThicknessKey];
-							[horizontalRule setObject:@(hasPadding) forKey:horizontalRulePaddingKey];
-							[horizontalRule setObject:@(hasSpaces) forKey:horizontalRuleSpacesKey];
-							[horizontalRule setObject:[NSValue valueWithRange:lineRange] forKey:horizontalRuleRangeKey];
-							[horizontalRules addObject:horizontalRule];
+							NSFont *font = baseAttributes[NSFontAttributeName];
+							NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+							NSRange range = NSMakeRange(lineRange.location, lineRange.length - 1); // minus newline
+							
+							HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
+							[textAttachments addObject:textAttachment];
 						}
 					}
 				}
@@ -334,26 +329,11 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 		
-		for (NSDictionary *horizontalRule in horizontalRules.reverseObjectEnumerator) {
-			NSNumber *thicknessValue = [horizontalRule objectForKey:horizontalRuleThicknessKey];
-			CGFloat thickness = thicknessValue.doubleValue;
-			NSNumber *paddingValue = [horizontalRule objectForKey:horizontalRulePaddingKey];
-			BOOL hasPadding = paddingValue.boolValue;
-			NSNumber *spacesValue = [horizontalRule objectForKey:horizontalRuleSpacesKey];
-			BOOL hasSpaces = spacesValue.boolValue;
-			NSValue *rangeValue = [horizontalRule objectForKey:horizontalRuleRangeKey];
-			NSRange range = rangeValue.rangeValue;
-			DebugLog(@"%s range = %@, thickness = %f, string = '%@'", "NSAttributedString+Markdown", NSStringFromRange(range), thickness, [[scanString substringWithRange:range] stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet]);
-			
-			NSInteger width = range.length - 1;
-			NSFont *font = baseAttributes[NSFontAttributeName];
-			NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
-
-			HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces width:width];
+		for (HorizontalRuleTextAttachment *textAttachment in textAttachments.reverseObjectEnumerator) {
+			NSRange range = textAttachment.range;
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
-
+			
 			NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
-			[replacement appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
 			[result replaceCharactersInRange:range withAttributedString:replacement];
 		}
 	}

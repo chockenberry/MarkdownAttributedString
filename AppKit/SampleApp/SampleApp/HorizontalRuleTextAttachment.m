@@ -8,9 +8,13 @@
 
 #import "HorizontalRuleTextAttachment.h"
 
+@interface HorizontalRuleTextAttachment ()
+
+@end
+
 @implementation HorizontalRuleTextAttachment
 
-- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces width:(NSInteger)width
+- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range
 {
 	self = [super init];
 	if (self != nil) {
@@ -19,13 +23,18 @@
 		_thickness = thickness;
 		_hasPadding = hasPadding;
 		_hasSpaces = hasSpaces;
-		_width = width;
+		_range = range;
 		
 		// NOTE: Placeholder image has size in points and will be included in RTFD package as a TIFF file.
 		NSRect placeholderBounds = NSMakeRect(0, 0, 300, thickness + 2);
 		self.image = [self imageForBounds:placeholderBounds];
 	}
 	return self;
+}
+
+- (NSInteger)width
+{
+	return self.range.length;
 }
 
 - (CGRect)attachmentBoundsForAttributes:(NSDictionary<NSAttributedStringKey,id> *)attributes location:(id<NSTextLocation>)location textContainer:(NSTextContainer *)textContainer proposedLineFragment:(CGRect)proposedLineFragment position:(CGPoint)position
@@ -90,7 +99,7 @@ static NSString *const horizontalRuleColorCodingKey = @"color";
 static NSString *const horizontalRuleThicknessCodingKey = @"thickness";
 static NSString *const horizontalRulePaddingCodingKey = @"padding";
 static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
-static NSString *const horizontalRuleWidthCodingKey = @"width";
+//static NSString *const horizontalRuleWidthCodingKey = @"width";
 
 + (BOOL)supportsSecureCoding
 {
@@ -109,7 +118,11 @@ static NSString *const horizontalRuleWidthCodingKey = @"width";
 	[coder encodeDouble:self.thickness forKey:horizontalRuleThicknessCodingKey];
 	[coder encodeBool:self.hasPadding forKey:horizontalRulePaddingCodingKey];
 	[coder encodeBool:self.hasSpaces forKey:horizontalRuleSpacesCodingKey];
-	[coder encodeInteger:self.width forKey:horizontalRuleWidthCodingKey];
+	
+	NSValue *rangeValue = [NSValue valueWithRange:self.range];
+	if (rangeValue != nil) {
+		[rangeValue encodeWithCoder:coder];
+	}
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)decoder
@@ -120,9 +133,11 @@ static NSString *const horizontalRuleWidthCodingKey = @"width";
 	CGFloat thickness = [decoder decodeDoubleForKey:horizontalRuleThicknessCodingKey];
 	BOOL hasPadding = [decoder decodeBoolForKey:horizontalRulePaddingCodingKey];
 	BOOL hasSpaces = [decoder decodeBoolForKey:horizontalRuleSpacesCodingKey];
-	NSInteger width = [decoder decodeIntegerForKey:horizontalRuleWidthCodingKey];
+	//NSInteger width = [decoder decodeIntegerForKey:horizontalRuleWidthCodingKey];
 
-	return [self initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces width:width];
+	NSValue *value = [[NSValue alloc] initWithCoder:decoder];
+	NSRange range = value.rangeValue;
+	return [self initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
 }
 
 @end

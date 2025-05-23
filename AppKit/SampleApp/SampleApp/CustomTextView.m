@@ -12,6 +12,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 
 @implementation CustomTextView
 
+// https://christiantietze.de/posts/2021/02/disable-nstextattachment-sharing-service/
 - (NSArray<NSSharingService *> *)sharingServicePicker:(NSSharingServicePicker *)sharingServicePicker sharingServicesForItems:(NSArray *)items proposedSharingServices:(NSArray<NSSharingService *> *)proposedServices
 {
 	return @[];
