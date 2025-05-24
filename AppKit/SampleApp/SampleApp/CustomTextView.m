@@ -166,7 +166,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 // Invoked automatically to read a specific type from the pasteboard.  The type will already have been by the preferredPasteboardTypeFromArray:restrictedToTypesFromArray: method so this should merely read the data using the appropriate accessor method on the pasteboard.
 - (BOOL)readSelectionFromPasteboard:(NSPasteboard *)pasteboard type:(NSPasteboardType)type
 {
-	if ([self updateWithPasteboard:pasteboard inRange:self.selectedRange selectRange:NO]) {
+	if ([self updateWithPasteboard:pasteboard inRange:self.selectedRange]) {
 		return YES;
 	}
 	
@@ -301,7 +301,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	return [[NSAttributedString alloc] initWithString:string attributes:self.baseAttributes];
 }
 
-- (BOOL)updateWithString:(NSString *)string inRange:(NSRange)range richText:(BOOL)richText selectRange:(BOOL)selectRange
+- (BOOL)updateWithString:(NSString *)string inRange:(NSRange)range richText:(BOOL)richText
 {
 	BOOL result = NO;
 	
@@ -309,19 +309,14 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	if ([self shouldChangeTextInRange:range replacementString:matchingAttributedString.string]) {
 		[self.textStorage replaceCharactersInRange:range withAttributedString:matchingAttributedString];
 		[self didChangeText];
-		if (selectRange) {
-			self.selectedRange = NSMakeRange(range.location, string.length);
-		}
-		else {
-			self.selectedRange = NSMakeRange(range.location + string.length, 0);
-		}
+		
 		result = YES;
 	}
 	
 	return result;
 }
 
-- (BOOL)updateWithMarkdownAttributedString:(NSAttributedString *)attributedString inRange:(NSRange)range selectRange:(BOOL)selectRange
+- (BOOL)updateWithMarkdownAttributedString:(NSAttributedString *)attributedString inRange:(NSRange)range
 {
 	BOOL result = NO;
 
@@ -330,12 +325,6 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	if ([self shouldChangeTextInRange:range replacementString:matchingAttributedString.string]) {
 		[self.textStorage replaceCharactersInRange:range withAttributedString:matchingAttributedString];
 		[self didChangeText];
-		if (selectRange) {
-			self.selectedRange = NSMakeRange(range.location, string.length);
-		}
-		else {
-			self.selectedRange = NSMakeRange(range.location + string.length, 0);
-		}
 
 		result = YES;
 	}
@@ -343,7 +332,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	return result;
 }
 
-- (BOOL)updateWithAttributedString:(NSAttributedString *)attributedString inRange:(NSRange)range selectRange:(BOOL)selectRange
+- (BOOL)updateWithAttributedString:(NSAttributedString *)attributedString inRange:(NSRange)range
 {
 	BOOL result = NO;
 
@@ -354,12 +343,6 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	if ([self shouldChangeTextInRange:range replacementString:matchingAttributedString.string]) {
 		[self.textStorage replaceCharactersInRange:range withAttributedString:matchingAttributedString];
 		[self didChangeText];
-		if (selectRange) {
-			self.selectedRange = NSMakeRange(range.location, matchingAttributedString.length);
-		}
-		else {
-			self.selectedRange = NSMakeRange(range.location + matchingAttributedString.length, 0);
-		}
 
 		result = YES;
 	}
@@ -367,7 +350,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	return result;
 }
 
-- (BOOL)updateWithMarkdownString:(NSString *)string inRange:(NSRange)range selectRange:(BOOL)selectRange
+- (BOOL)updateWithMarkdownString:(NSString *)string inRange:(NSRange)range
 {
 	BOOL result = NO;
 
@@ -375,12 +358,6 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	if ([self shouldChangeTextInRange:range replacementString:attributedString.string]) {
 		[self.textStorage replaceCharactersInRange:range withAttributedString:attributedString];
 		[self didChangeText];
-		if (selectRange) {
-			self.selectedRange = NSMakeRange(range.location, attributedString.length);
-		}
-		else {
-			self.selectedRange = NSMakeRange(range.location + attributedString.length, 0);
-		}
 
 		result = YES;
 	}
@@ -388,7 +365,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	return result;
 }
 
-- (BOOL)updateWithPasteboard:(NSPasteboard *)pasteboard inRange:(NSRange)range selectRange:(BOOL)selectRange
+- (BOOL)updateWithPasteboard:(NSPasteboard *)pasteboard inRange:(NSRange)range
 {
 	BOOL result = NO;
 	
@@ -398,7 +375,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 		NSData *data = [pasteboardItem dataForType:UTTypeTot];
 		NSAttributedString *attributedString = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSAttributedString class] fromData:data error:nil];
 		if (attributedString != nil) {
-			result = [self updateWithAttributedString:attributedString inRange:range selectRange:selectRange];
+			result = [self updateWithAttributedString:attributedString inRange:range];
 		}
 	}
 	else if ([pasteboardItem.types containsObject:NSPasteboardTypeURL]) {
@@ -412,11 +389,11 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 			
 			if (URL && nameString) {
 				NSAttributedString *linkString = [[NSAttributedString alloc] initWithString:nameString attributes:URLAttributes];
-				result = [self updateWithAttributedString:linkString inRange:range selectRange:selectRange];
+				result = [self updateWithAttributedString:linkString inRange:range];
 			}
 			else if (URL) {
 				NSAttributedString *linkString = [[NSAttributedString alloc] initWithString:URLString attributes:URLAttributes];
-				result = [self updateWithAttributedString:linkString inRange:range selectRange:selectRange];
+				result = [self updateWithAttributedString:linkString inRange:range];
 			}
 			else {
 				// return NO and let superclass handle linking string up
@@ -434,7 +411,7 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 					string = [NSString stringWithFormat:@"<%@>", linkString];
 				}
 				
-				result = [self updateWithString:string inRange:range richText:NO selectRange:selectRange];
+				result = [self updateWithString:string inRange:range richText:NO];
 			}
 		}
 	}
@@ -453,10 +430,10 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 					//NSLog(@"%s NSPasteboardTypeFileURL attributedString = %@", __PRETTY_FUNCTION__, attributedString);
 					
 					if (self.isRichText) {
-						result = [self updateWithAttributedString:attributedString inRange:range selectRange:selectRange];
+						result = [self updateWithAttributedString:attributedString inRange:range];
 					}
 					else {
-						result = [self updateWithMarkdownAttributedString:attributedString inRange:range selectRange:selectRange];
+						result = [self updateWithMarkdownAttributedString:attributedString inRange:range];
 					}
 				}
 			}
@@ -470,10 +447,10 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 					BOOL parseMarkdown = [(__bridge NSString *)fileUTI isEqual:UTTypeMarkdown];
 
 					if (self.isRichText && parseMarkdown) {
-						result = [self updateWithMarkdownString:string inRange:range selectRange:selectRange];
+						result = [self updateWithMarkdownString:string inRange:range];
 					}
 					else {
-						result = [self updateWithString:string inRange:range richText:self.isRichText selectRange:selectRange];
+						result = [self updateWithString:string inRange:range richText:self.isRichText];
 					}
 				}
 			}
@@ -490,10 +467,10 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 				//NSLog(@"%s NSPasteboardTypeRTF attributedString = %@", __PRETTY_FUNCTION__, attributedString);
 				
 				if (self.isRichText) {
-					result = [self updateWithAttributedString:attributedString inRange:range selectRange:selectRange];
+					result = [self updateWithAttributedString:attributedString inRange:range];
 				}
 				else {
-					result = [self updateWithMarkdownAttributedString:attributedString inRange:range selectRange:selectRange];
+					result = [self updateWithMarkdownAttributedString:attributedString inRange:range];
 				}
 			}
 		}
@@ -507,10 +484,10 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 				//NSLog(@"%s NSPasteboardTypeHTML attributedString = %@", __PRETTY_FUNCTION__, attributedString);
 				
 				if (self.isRichText) {
-					result = [self updateWithAttributedString:attributedString inRange:range selectRange:selectRange];
+					result = [self updateWithAttributedString:attributedString inRange:range];
 				}
 				else {
-					result = [self updateWithMarkdownAttributedString:attributedString inRange:range selectRange:selectRange];
+					result = [self updateWithMarkdownAttributedString:attributedString inRange:range];
 				}
 			}
 		}
@@ -519,10 +496,10 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 		NSString *string = [pasteboardItem stringForType:UTTypeMarkdown];
 		if (string) {
 			if (self.isRichText) {
-				result = [self updateWithMarkdownString:string inRange:range selectRange:selectRange];
+				result = [self updateWithMarkdownString:string inRange:range];
 			}
 			else {
-				result = [self updateWithString:string inRange:range richText:self.isRichText selectRange:selectRange];
+				result = [self updateWithString:string inRange:range richText:self.isRichText];
 			}
 		}
 	} // end UTTypeMarkdown
@@ -536,14 +513,14 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 					[URLAttributes setObject:URL forKey:NSLinkAttributeName];
 
 					NSAttributedString *linkString = [[NSAttributedString alloc] initWithString:string attributes:URLAttributes];
-					result = [self updateWithAttributedString:linkString inRange:range selectRange:selectRange];
+					result = [self updateWithAttributedString:linkString inRange:range];
 				}
 				else {
-					result = [self updateWithString:string inRange:range richText:NO selectRange:selectRange];
+					result = [self updateWithString:string inRange:range richText:NO];
 				}
 			}
 			else {
-				result = [self updateWithString:string inRange:range richText:self.isRichText selectRange:selectRange];
+				result = [self updateWithString:string inRange:range richText:self.isRichText];
 			}
 		}
 	} // end NSPasteboardTypeString

@@ -667,7 +667,7 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                             </scrollView>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Q1u-Lr-oDx">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Q1u-Lr-oDx">
                                 <rect key="frame" x="18" y="592" width="164" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="NSTextView with Rich Text" id="q5c-d4-YL2">
                                     <font key="font" usesAppearanceFont="YES"/>
@@ -675,7 +675,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JzY-WK-9Ry">
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JzY-WK-9Ry">
                                 <rect key="frame" x="18" y="278" width="172" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="clipping" title="NSTextView with Markdown" id="iiJ-D6-Mqg">
                                     <font key="font" usesAppearanceFont="YES"/>
