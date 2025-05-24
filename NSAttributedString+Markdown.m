@@ -317,7 +317,29 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 						if (haveRule) {
 							NSFont *font = baseAttributes[NSFontAttributeName];
 							NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
-							NSRange range = NSMakeRange(lineRange.location, lineRange.length - 1); // minus newline
+
+							NSString *lineBeginning = [lineString substringToIndex:0];
+							NSString *lineEnding = [lineString substringFromIndex:lineString.length - 1];
+
+							NSRange range = NSMakeRange(lineRange.location, lineRange.length);
+							if (lineString.length > 0) {
+//								if ([lineBeginning isEqualToString:@"\n"]) {
+//									range.location = range.location + 1;
+//									range.length = range.length - 1;
+//								}
+//								else {
+//									// no adjustment?
+//									NSLog(@"no adjustment for lineBeginning = %@", lineBeginning);
+//								}
+
+								if ([lineEnding isEqualToString:@"\n"]) {
+									range.length = range.length - 1;
+								}
+								else {
+									// no adjustment?
+									NSLog(@"no adjustment for lineEnding = %@", lineEnding);
+								}
+							}
 							
 							HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
 							[textAttachments addObject:textAttachment];
@@ -331,6 +353,15 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 		
 		for (HorizontalRuleTextAttachment *textAttachment in textAttachments.reverseObjectEnumerator) {
 			NSRange range = textAttachment.range;
+			//								if ([lineBeginning isEqualToString:@"\n"]) {
+			//									range.location = range.location + 1;
+			//									range.length = range.length - 1;
+			//								}
+			//								else {
+			//									// no adjustment?
+			//									NSLog(@"no adjustment for lineBeginning = %@", lineBeginning);
+			//								}
+
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 			
 			NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
