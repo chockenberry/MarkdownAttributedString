@@ -276,7 +276,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 				NSString *firstLineCharacter = [lineString substringToIndex:1];
 				/*
 				 Per the Markdown Syntax documentation:
-					You can produce a horizontal rule tag (<hr />) by placing three or more hyphens, asterisks, or underscores on a line by themselves.
+					You can produce a horizontal rule tag by placing three or more hyphens, asterisks, or underscores on a line by themselves.
 					If you wish, you may use spaces between the hyphens or asterisks
 				 */
 				NSString *trimmedString = [lineString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
@@ -318,26 +318,11 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 							NSFont *font = baseAttributes[NSFontAttributeName];
 							NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 
-							NSString *lineBeginning = [lineString substringToIndex:0];
-							NSString *lineEnding = [lineString substringFromIndex:lineString.length - 1];
-
 							NSRange range = NSMakeRange(lineRange.location, lineRange.length);
 							if (lineString.length > 0) {
-//								if ([lineBeginning isEqualToString:@"\n"]) {
-//									range.location = range.location + 1;
-//									range.length = range.length - 1;
-//								}
-//								else {
-//									// no adjustment?
-//									NSLog(@"no adjustment for lineBeginning = %@", lineBeginning);
-//								}
-
+								NSString *lineEnding = [lineString substringFromIndex:lineString.length - 1];
 								if ([lineEnding isEqualToString:@"\n"]) {
 									range.length = range.length - 1;
-								}
-								else {
-									// no adjustment?
-									NSLog(@"no adjustment for lineEnding = %@", lineEnding);
 								}
 							}
 							
@@ -353,14 +338,6 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 		
 		for (HorizontalRuleTextAttachment *textAttachment in textAttachments.reverseObjectEnumerator) {
 			NSRange range = textAttachment.range;
-			//								if ([lineBeginning isEqualToString:@"\n"]) {
-			//									range.location = range.location + 1;
-			//									range.length = range.length - 1;
-			//								}
-			//								else {
-			//									// no adjustment?
-			//									NSLog(@"no adjustment for lineBeginning = %@", lineBeginning);
-			//								}
 
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 			

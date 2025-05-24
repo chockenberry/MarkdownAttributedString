@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSDictionary<NSAttributedStringKey, id> *baseAttributes;
 @property (nonatomic, strong, nullable) NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes;
 
+- (BOOL)updateWithAttributedString:(NSAttributedString *)attributedString inRange:(NSRange)range;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -144,8 +144,15 @@ static NSString *const savedStringKey = @"savedString";
 	HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES range:NSMakeRange(range.location, 20)];
 	NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 
+#if 1
+	[self.richTextTextView updateWithAttributedString:attachment inRange:range];
+	NSUInteger end;
+	[self.richTextTextView.string getLineStart:NULL end:&end contentsEnd:NULL forRange:NSMakeRange(range.location + 1, 1)];
+	self.richTextTextView.selectedRange = NSMakeRange(end, 0); // 3 = newline, attachment, newline
+#else
 	NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];
 	NSAttributedString *newline = [[NSAttributedString alloc] initWithString:@"\n"];
+	// TODO: Check if there is already a newline before or after the insertion point.
 	[replacement insertAttributedString:newline atIndex:0];
 	[replacement appendAttributedString:newline];
 
@@ -154,6 +161,7 @@ static NSString *const savedStringKey = @"savedString";
 		[self.richTextTextView didChangeText];
 	}
 	//[self.richTextTextView.textStorage replaceCharactersInRange:range withAttributedString:replacement];
+#endif
 }
 
 - (IBAction)setRichTextExamples:(id)sender

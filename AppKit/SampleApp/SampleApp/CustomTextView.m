@@ -339,7 +339,43 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	NSAttributedString *matchingAttributedString = [self matchingAttributedString:attributedString];
 	
 	NSDictionary<NSAttributedStringKey, id> *linkTextAttributes = self.linkTextAttributes;
+	NSColor *linkColor = linkTextAttributes[NSForegroundColorAttributeName] ?: NSColor.linkColor;
 
+	// NOTE: The range is checked to ensure that text attachments are surrounded by newlines
+	if (matchingAttributedString.length > 0) {
+		unichar character = NSAttachmentCharacter;
+		NSString *attachmentString = [NSString stringWithCharacters:&character length:1];
+		NSString *beginningString = [matchingAttributedString.string substringToIndex:1];
+		NSString *endingString = [matchingAttributedString.string substringFromIndex:matchingAttributedString.length - 1];
+		BOOL needsPrefix = [beginningString isEqualToString:attachmentString];
+		BOOL needsSuffix = [endingString isEqualToString:attachmentString];
+		if (needsPrefix || needsSuffix) {
+			NSString *destinationString = self.textStorage.string;
+			if (range.location > 0) {
+				NSRange leadingRange = NSMakeRange(range.location - 1, 1);
+				if ([[destinationString substringWithRange:leadingRange] isEqual:@"\n"]) {
+					needsPrefix = NO;
+				}
+			}
+			if (range.location + range.length < destinationString.length - 1) {
+				NSRange trailingRange = NSMakeRange(range.location + range.length, 1);
+				if ([[destinationString substringWithRange:trailingRange] isEqual:@"\n"]) {
+					needsSuffix = NO;
+				}
+			}
+			NSAttributedString *newline = [[NSAttributedString alloc] initWithString:@"\n"];
+
+			NSMutableAttributedString *updatedMatchingAttributedString = [matchingAttributedString mutableCopy];
+			if (needsPrefix) {
+				[updatedMatchingAttributedString insertAttributedString:newline atIndex:0];
+			}
+			if (needsSuffix) {
+				[updatedMatchingAttributedString appendAttributedString:newline];
+			}
+			matchingAttributedString = [updatedMatchingAttributedString copy];
+		}
+	}
+	
 	if ([self shouldChangeTextInRange:range replacementString:matchingAttributedString.string]) {
 		[self.textStorage replaceCharactersInRange:range withAttributedString:matchingAttributedString];
 		[self didChangeText];
