@@ -37,9 +37,9 @@
 
 #define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules use text attachments in the rich text attributes
 
-#define ALLOW_CODE_MARKERS 0	// EXPERIMENTAL - Currently literals aren't escaped and style attributes are baked in (not using styleAttributes).
-
 NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Markdown Character Set
 
 @interface NSCharacterSet (Markdown)
 
@@ -47,11 +47,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#pragma mark - Markdown UTType
+
 extern NSString *const UTTypeMarkdown;
 // NOTE: The definition above can be used to determine if text on the clipboard contains Markdown:
 //
 // if ([UIPasteboard.generalPasteboard containsPasteboardTypes:@[ UTTypeMarkdown, (NSString *)kUTTypeText ]]) { ... }
 
+#pragma mark - Markdown Attribute Styles
 
 typedef NSString * MarkdownStyleKey NS_EXTENSIBLE_STRING_ENUM;
 
@@ -61,9 +64,7 @@ extern MarkdownStyleKey MarkdownStyleEmphasisBoth;					// attribute dictionary f
 
 extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionary to use instead of NSLinkAttributeName, link will be styled with attributes instead of clickable
 
-#if ALLOW_CODE_MARKERS
-extern MarkdownStyleKey MarkdownStyleCode;			                // EXPERIMENTAL - attribute dictionary for occuranges of `
-#endif
+#pragma mark - Markdown Attributed String
 
 @interface NSAttributedString (Markdown)
 
@@ -73,9 +74,33 @@ extern MarkdownStyleKey MarkdownStyleCode;			                // EXPERIMENTAL - a
 
 @property (nonatomic, readonly) NSString *markdownRepresentation;
 
-// for tests, to quickly check the placement of attributes
+#pragma mark -
+
+// NOTE: This is mainly for the automated tests: it generates a representation that can be used to check the placement and state of attributes.
 @property (nonatomic, readonly) NSString *markdownDebug;
 
 @end
+
+
+#pragma mark - Markdown Horizontal Rule
+
+#if ALLOW_HORIZONTAL_RULES
+
+@interface MarkdownHorizontalRuleTextAttachment : NSTextAttachment <NSSecureCoding>
+
+- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range;
+
+@property (nonatomic, assign, readonly) NSRange range;		// NOTE: this value does not update as text is edited: consider it a temporary variable.
+
+@property (nonatomic, strong, readonly) NSColor *color;
+@property (nonatomic, strong, readonly) NSFont *font;
+@property (nonatomic, assign, readonly) CGFloat thickness;	// "***" = 2.0, "---" = 1.0
+@property (nonatomic, assign, readonly) BOOL hasPadding;	// "  ***  " or "  ------  "
+@property (nonatomic, assign, readonly) BOOL hasSpaces;		// "* * *" or "--- - ---"
+@property (nonatomic, assign, readonly) NSInteger width;	// "***" = 3, "-----" = 5, "-- - --" = 7
+
+@end
+
+#endif
 
 NS_ASSUME_NONNULL_END

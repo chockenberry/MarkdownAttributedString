@@ -42,8 +42,6 @@
 
 #import "NSAttributedString+Markdown.h"
 
-#import "HorizontalRuleTextAttachment.h"
-
 #if TARGET_OS_OSX
 
 #define FONT_CLASS NSFont
@@ -71,6 +69,8 @@
 #else
 	#define DebugLog(...) do {} while (0)
 #endif
+
+#pragma mark - Markdown Character Set
 
 NSString *const literalBackslash = @"\\";
 NSString *const literalAsterisk = @"*";
@@ -119,7 +119,11 @@ NSString *const literalExclamationPoint = @"!";
 
 @end
 
+#pragma mark - Markdown UTType
+
 NSString *const UTTypeMarkdown = @"net.daringfireball.markdown";
+
+#pragma mark - Markdown Attribute Styles
 
 MarkdownStyleKey MarkdownStyleEmphasisSingle = @"MarkdownStyleEmphasisSingle";
 MarkdownStyleKey MarkdownStyleEmphasisDouble = @"MarkdownStyleEmphasisDouble";
@@ -127,9 +131,7 @@ MarkdownStyleKey MarkdownStyleEmphasisBoth = @"MarkdownStyleEmphasisBoth";
 
 MarkdownStyleKey MarkdownStyleLink = @"MarkdownStyleLink";
 
-#if ALLOW_CODE_MARKERS
-MarkdownStyleKey MarkdownStyleCode = @"MarkdownStyleCode";
-#endif
+#pragma mark - Markdown Attributed String
 
 @implementation NSAttributedString (Markdown)
 
@@ -155,11 +157,6 @@ NSString *const emphasisDoubleEnd = @"**";
 #if ALLOW_ALTERNATES
 NSString *const emphasisDoubleAlternateStart = @"__";
 NSString *const emphasisDoubleAlternateEnd = @"__";
-#endif
-
-#if ALLOW_CODE_MARKERS
-NSString *const codeStart = @"`";
-NSString *const codeEnd = @"`";
 #endif
 
 const unichar escapeCharacter = '\\';
@@ -260,13 +257,15 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 	}];
 }
 
+#if ALLOW_HORIZONTAL_RULES
+
 static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<NSAttributedStringKey, id> *baseAttributes, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
 	NSString *scanString = [result.string copy];
 
 	if (blockType == MarkdownBlockHorizontalRule) {
 		// check the input for horizontal rules and ignore markers that occur within their line's range
-		NSMutableArray<HorizontalRuleTextAttachment *> *textAttachments = [NSMutableArray array];
+		NSMutableArray<MarkdownHorizontalRuleTextAttachment *> *textAttachments = [NSMutableArray array];
 		NSRange checkRange = NSMakeRange(0, 1);
 		while (checkRange.location + checkRange.length < scanString.length) {
 			NSRange lineRange = [scanString lineRangeForRange:checkRange];
@@ -326,7 +325,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 								}
 							}
 							
-							HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
+							MarkdownHorizontalRuleTextAttachment *textAttachment = [[MarkdownHorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
 							[textAttachments addObject:textAttachment];
 						}
 					}
@@ -336,7 +335,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 		
-		for (HorizontalRuleTextAttachment *textAttachment in textAttachments.reverseObjectEnumerator) {
+		for (MarkdownHorizontalRuleTextAttachment *textAttachment in textAttachments.reverseObjectEnumerator) {
 			NSRange range = textAttachment.range;
 
 			NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
@@ -346,6 +345,8 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 		}
 	}
 }
+
+#endif
 
 static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
@@ -629,16 +630,6 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 							}
 							break;
 						}
-						case MarkdownSpanCode:
-#if ALLOW_CODE_MARKERS
-							// NOTE: This is a simplistic implementation that only adjusts the visual aspects of the inline code. It's a much harder problem
-							// when you think about how stuff between the code markers doesn't get modified (e.g. with emphasis or literals.)
-							replacementAttributes = @{ NSForegroundColorAttributeName: NSColor.labelColor, NSBackgroundColorAttributeName: [NSColor.labelColor colorWithAlphaComponent:0.1], NSFontAttributeName: [NSFont userFixedPitchFontOfSize:16.0], NSMarkedClauseSegmentAttributeName: @(1) };
-							replaceMarkers = YES;
-#else
-							NSCAssert(NO, @"Not implemented");
-#endif
-							break;
 					}
                      
 					if (replaceMarkers) {
@@ -753,10 +744,6 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 
     // replace < and > markers with a link attribute
     updateAttributedString(result, linkAutomaticStart, nil, linkAutomaticEnd, MarkdownSpanLinkAutomatic, styleAttributes);
-#endif
-	
-#if ALLOW_CODE_MARKERS
-    updateAttributedString(result, codeStart, nil, codeEnd, MarkdownSpanCode, styleAttributes);
 #endif
 	
 	// replace ** and __ markers with bold font traits or MarkdownStyleEmphasisDouble style attributes
@@ -1047,13 +1034,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			}
 		}
 		
-#if ALLOW_CODE_MARKERS
-		BOOL currentRangeHasCode = NO;
-		if (currentAttributes[NSMarkedClauseSegmentAttributeName]) {
-			currentRangeHasCode = YES;
-		}
-#endif
-		
 		// compare current traits to previous states
 		NSString *prefixString = @"";
 		NSString *suffixString = @"";
@@ -1114,13 +1094,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			}
 		}
 		
-#if ALLOW_CODE_MARKERS
-		if (currentRangeHasCode) {
-			prefixString = [prefixString stringByAppendingString:codeStart];
-			suffixString = [suffixString stringByAppendingString:codeEnd];
-		}
-#endif
-		
 		if (! nextRangeHasItalic) {
 			if (*inItalicRun) {
 				// emit end of italic run
@@ -1157,6 +1130,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
+#if ALLOW_HORIZONTAL_RULES
 	if (cleanAttributedString.length > 0) {
 		unichar character = NSAttachmentCharacter;
 		NSString *attachment = [NSString stringWithCharacters:&character length:1];
@@ -1178,8 +1152,8 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			}
 			NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
 			id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
-			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
-				HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachmentObject;
+			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[MarkdownHorizontalRuleTextAttachment class]]) {
+				MarkdownHorizontalRuleTextAttachment *textAttachment = (MarkdownHorizontalRuleTextAttachment *)attachmentObject;
 				NSInteger width = textAttachment.width;
 				if (textAttachment.hasSpaces) {
 					width = width - 3;
@@ -1221,7 +1195,8 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			range = [cleanAttributedString.string rangeOfString:attachment];
 		}
 	}
-
+#endif
+	
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
 	NSUInteger normalizedLength = normalizedAttributedString.length;
@@ -1317,17 +1292,21 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			}
 		}
 
+#if ALLOW_HORIZONTAL_RULES
 		BOOL rangeHasAttachment = NO;
 		NSString *attachmentString = @"";
 		id attachment = attributes[NSAttachmentAttributeName];
 		if (attachment) {
 			rangeHasAttachment = YES;
-			if ([attachment isMemberOfClass:[HorizontalRuleTextAttachment class]]) {
-				HorizontalRuleTextAttachment *textAttachment = (HorizontalRuleTextAttachment *)attachment;
+			if ([attachment isMemberOfClass:[MarkdownHorizontalRuleTextAttachment class]]) {
+				MarkdownHorizontalRuleTextAttachment *textAttachment = (MarkdownHorizontalRuleTextAttachment *)attachment;
 				attachmentString = [NSString stringWithFormat:@"-%.0f%s%s-", textAttachment.thickness, (textAttachment.hasPadding ? "P" : ""), (textAttachment.hasSpaces ? "S" : "")];
 			}
 		}
-
+#else
+		NSString *attachmentString = @"";
+#endif
+		
 		NSString *rangeString = [NSString stringWithFormat:@"[%@](%s%s)%@%@", [self.string substringWithRange:range], (rangeHasBold ? "B" : " "), (rangeHasItalic ? "I" : " "), linkString, attachmentString];
 		[result appendString:rangeString];
 	}];
@@ -1339,3 +1318,147 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 }
 
 @end
+
+#pragma mark - MarkdownHorizontalRuleTextAttachment
+
+#if ALLOW_HORIZONTAL_RULES
+
+@implementation MarkdownHorizontalRuleTextAttachment
+
+- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range
+{
+	self = [super init];
+	if (self != nil) {
+		_font = font;
+		_color = color;
+		_thickness = thickness;
+		_hasPadding = hasPadding;
+		_hasSpaces = hasSpaces;
+		_range = range;
+		
+		// NOTE: Placeholder image has size in points and will be included in RTFD package as a TIFF file.
+		NSRect placeholderBounds = NSMakeRect(0, 0, 300, thickness + 2);
+		self.image = [self imageForBounds:placeholderBounds withColor:nil];
+		self.bounds = placeholderBounds;
+	}
+	return self;
+}
+
+- (NSInteger)width
+{
+	return self.range.length;
+}
+
+- (CGRect)attachmentBoundsForAttributes:(NSDictionary<NSAttributedStringKey,id> *)attributes location:(id<NSTextLocation>)location textContainer:(NSTextContainer *)textContainer proposedLineFragment:(CGRect)proposedLineFragment position:(CGPoint)position
+{
+	NSLog(@"%s proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	if (self.font != nil && textContainer.textView.window != nil) {
+		proposedLineFragment.size.height = floor((self.font.ascender + self.font.descender + self.font.leading) * textContainer.textView.window.backingScaleFactor);
+	}
+	NSLog(@"%s return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	return proposedLineFragment;
+}
+
+- (NSImage *)imageForBounds:(CGRect)imageBounds textContainer:(NSTextContainer *)textContainer characterIndex:(NSUInteger)charIndex
+{
+	self.image = [self imageForBounds:imageBounds withColor:nil];
+	self.bounds = imageBounds;
+
+	return [self imageForBounds:imageBounds withColor:self.color];
+}
+
+- (NSImage *)imageForBounds:(CGRect)imageBounds withColor:(NSColor *)color
+{
+	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(imageBounds.size.width, imageBounds.size.height)];
+	[image lockFocus];
+	if (color != nil) {
+		[color set];
+	}
+	else {
+		[NSColor.blackColor set];
+	}
+	
+	CGFloat padding = 0.0;
+	if (self.hasPadding) {
+		padding = 20.0;
+	}
+	
+	CGFloat verticalCenter = floor((imageBounds.size.height / 2) - (self.thickness / 2));
+	
+	if (self.hasSpaces) {
+		CGFloat midPoint = (imageBounds.size.width / 2.0);
+		CGFloat spacing = 10.0;
+		
+		NSRect leftFillRect = NSMakeRect(0 + padding, verticalCenter, midPoint - padding - spacing, self.thickness);
+		NSRectFill(leftFillRect);
+#if 0 // square dot
+		NSRect centerFillRect = NSMakeRect(midPoint - (self.thickness / 2.0), verticalCenter, self.thickness, self.thickness);
+		NSRectFill(centerFillRect);
+#else // circular dot
+		NSRect centerFillRect = NSMakeRect(midPoint - self.thickness, verticalCenter - self.thickness / 2.0, self.thickness * 2, self.thickness * 2);
+		NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:centerFillRect];
+		[path fill];
+#endif
+		NSRect rightFillRect = NSMakeRect(midPoint + spacing, verticalCenter, midPoint - padding - spacing, self.thickness);
+		NSRectFill(rightFillRect);
+	}
+	else {
+		NSRect fillRect = NSMakeRect(0 + padding, verticalCenter, imageBounds.size.width - (padding * 2), self.thickness);
+		NSRectFill(fillRect);
+	}
+	[image unlockFocus];
+	
+	return image;
+
+}
+
+#pragma mark - NSSecureCoding
+
+static NSString *const horizontalRuleFontCodingKey = @"font";
+static NSString *const horizontalRuleColorCodingKey = @"color";
+static NSString *const horizontalRuleThicknessCodingKey = @"thickness";
+static NSString *const horizontalRulePaddingCodingKey = @"padding";
+static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
+
++ (BOOL)supportsSecureCoding
+{
+	return YES;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+	if (self.font != nil) {
+		[self.font encodeWithCoder:coder];
+	}
+	if (self.color != nil) {
+		[self.color encodeWithCoder:coder];
+	}
+	
+	[coder encodeDouble:self.thickness forKey:horizontalRuleThicknessCodingKey];
+	[coder encodeBool:self.hasPadding forKey:horizontalRulePaddingCodingKey];
+	[coder encodeBool:self.hasSpaces forKey:horizontalRuleSpacesCodingKey];
+	
+	NSValue *rangeValue = [NSValue valueWithRange:self.range];
+	if (rangeValue != nil) {
+		[rangeValue encodeWithCoder:coder];
+	}
+}
+
+- (nullable instancetype)initWithCoder:(NSCoder *)decoder
+{
+	NSFont *font = [[NSFont alloc] initWithCoder:decoder];
+	NSColor *color = [[NSColor alloc] initWithCoder:decoder];
+
+	CGFloat thickness = [decoder decodeDoubleForKey:horizontalRuleThicknessCodingKey];
+	BOOL hasPadding = [decoder decodeBoolForKey:horizontalRulePaddingCodingKey];
+	BOOL hasSpaces = [decoder decodeBoolForKey:horizontalRuleSpacesCodingKey];
+
+	NSValue *value = [[NSValue alloc] initWithCoder:decoder];
+	NSRange range = value.rangeValue;
+	
+	return [self initWithFont:font color:color thickness:thickness hasPadding:hasPadding hasSpaces:hasSpaces range:range];
+}
+
+@end
+
+#endif
