@@ -13,7 +13,6 @@
 static NSString *const savedStringKey = @"savedString";
 
 #import "NSAttributedString+Markdown.h"
-#import "HorizontalRuleTextAttachment.h"
 
 #define USE_STYLE_ATTRIBUTES 1		// Enable this to use extended style attributes for the Markdown to attributed string conversions
 
@@ -72,6 +71,15 @@ static NSString *const savedStringKey = @"savedString";
 	self.markdownTextView.typingAttributes = @{ NSFontAttributeName: self.markdownFont };
 	self.markdownTextView.baseAttributes = @{ NSFontAttributeName: self.markdownFont };
 	self.markdownTextView.styleAttributes = nil;
+
+#if 0
+	// NOTE: Beginning in iOS 15 and macOS 122, UITextView and NSTextView started using TextKit 2.
+	// The rendering of text attachments is very different in TextKit 1 and enabling this code
+	// will let you see it.
+	//
+	// More info here: https://indiestack.com/2022/11/opting-out-of-textkit2-in-nstextview/
+	NSLayoutManager *result __unused = self.richTextTextView.layoutManager;
+#endif
 }
 
 - (void)viewDidAppear
@@ -141,7 +149,7 @@ static NSString *const savedStringKey = @"savedString";
 	NSColor *color = self.styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 #endif
 
-	HorizontalRuleTextAttachment *textAttachment = [[HorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES range:NSMakeRange(range.location, 20)];
+	MarkdownHorizontalRuleTextAttachment *textAttachment = [[MarkdownHorizontalRuleTextAttachment alloc] initWithFont:font color:color thickness:2 hasPadding:YES hasSpaces:YES range:NSMakeRange(range.location, 20)];
 	NSAttributedString *attachment = [NSAttributedString attributedStringWithAttachment:textAttachment];
 
 #if 1
