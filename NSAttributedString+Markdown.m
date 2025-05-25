@@ -42,27 +42,6 @@
 
 #import "NSAttributedString+Markdown.h"
 
-#if TARGET_OS_OSX
-
-#define FONT_CLASS NSFont
-#define FONT_DESCRIPTOR_CLASS NSFontDescriptor
-#define FONT_DESCRIPTOR_SYMBOLIC_TRAITS NSFontDescriptorSymbolicTraits
-#define FONT_DESCRIPTOR_TRAIT_BOLD NSFontDescriptorTraitBold
-#define FONT_DESCRIPTOR_TRAIT_ITALIC NSFontDescriptorTraitItalic
-#define FONT_DESCRIPTOR_CLASS_SYMBOLIC NSFontDescriptorClassSymbolic
-#define FONT_DESCRIPTOR_FAMILY_ATTRIBUTE NSFontFamilyAttribute
-
-#else
-
-#define FONT_CLASS UIFont
-#define FONT_DESCRIPTOR_CLASS UIFontDescriptor
-#define FONT_DESCRIPTOR_SYMBOLIC_TRAITS UIFontDescriptorSymbolicTraits
-#define FONT_DESCRIPTOR_TRAIT_BOLD UIFontDescriptorTraitBold
-#define FONT_DESCRIPTOR_TRAIT_ITALIC UIFontDescriptorTraitItalic
-#define FONT_DESCRIPTOR_CLASS_SYMBOLIC UIFontDescriptorClassSymbolic
-#define FONT_DESCRIPTOR_FAMILY_ATTRIBUTE UIFontDescriptorFamilyAttribute
-
-#endif
 
 #ifdef DEBUG
 	#define DebugLog(...) NSLog(__VA_ARGS__)
@@ -314,8 +293,8 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 						}
 						
 						if (haveRule) {
-							NSFont *font = baseAttributes[NSFontAttributeName];
-							NSColor *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
+							FONT_CLASS *font = baseAttributes[NSFontAttributeName];
+							COLOR_CLASS *color = styleAttributes[MarkdownStyleEmphasisDouble][NSForegroundColorAttributeName];
 
 							NSRange range = NSMakeRange(lineRange.location, lineRange.length);
 							if (lineString.length > 0) {
@@ -1325,7 +1304,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 
 @implementation MarkdownHorizontalRuleTextAttachment
 
-- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range
+- (instancetype)initWithFont:(FONT_CLASS *)font color:(COLOR_CLASS *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range
 {
 	self = [super init];
 	if (self != nil) {
@@ -1337,7 +1316,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		_range = range;
 		
 		// NOTE: Placeholder image has size in points and will be included in RTFD package as a TIFF file.
-		NSRect placeholderBounds = NSMakeRect(0, 0, 300, thickness + 2);
+		CGRect placeholderBounds = CGRectMake(0, 0, 300, thickness + 2);
 		self.image = [self imageForBounds:placeholderBounds withColor:nil];
 		self.bounds = placeholderBounds;
 	}
@@ -1351,31 +1330,49 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 
 - (CGRect)attachmentBoundsForAttributes:(NSDictionary<NSAttributedStringKey,id> *)attributes location:(id<NSTextLocation>)location textContainer:(NSTextContainer *)textContainer proposedLineFragment:(CGRect)proposedLineFragment position:(CGPoint)position
 {
-	NSLog(@"%s proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+#if TARGET_OS_OSX
+	NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
 	if (self.font != nil && textContainer.textView.window != nil) {
 		proposedLineFragment.size.height = floor((self.font.ascender + self.font.descender + self.font.leading) * textContainer.textView.window.backingScaleFactor);
 	}
-	NSLog(@"%s return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
 	return proposedLineFragment;
+#else
+	NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
+	if (self.font != nil) {
+		proposedLineFragment.size.height = self.font.lineHeight;
+	}
+	NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
+	return proposedLineFragment;
+#endif
 }
 
-- (NSImage *)imageForBounds:(CGRect)imageBounds textContainer:(NSTextContainer *)textContainer characterIndex:(NSUInteger)charIndex
+- (IMAGE_CLASS *)imageForBounds:(CGRect)imageBounds textContainer:(NSTextContainer *)textContainer characterIndex:(NSUInteger)charIndex
 {
+#if TARGET_OS_OSX
+	NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromRect(imageBounds));
+#else
+	NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(imageBounds));
+#endif
 	self.image = [self imageForBounds:imageBounds withColor:nil];
 	self.bounds = imageBounds;
 
 	return [self imageForBounds:imageBounds withColor:self.color];
 }
 
-- (NSImage *)imageForBounds:(CGRect)imageBounds withColor:(NSColor *)color
+- (IMAGE_CLASS *)imageForBounds:(CGRect)imageBounds withColor:(COLOR_CLASS *)color
 {
-	NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(imageBounds.size.width, imageBounds.size.height)];
+	// NOTE: Drawing here is in flipped coordinates. The imageBounds will be something like origin.x = 0, origin.y = N, size.width = 100, size.height = N.
+	// Since the image is vertically symmetric, we can ignore this.
+	
+#if TARGET_OS_OSX
+	IMAGE_CLASS *image = [[IMAGE_CLASS alloc] initWithSize:NSMakeSize(imageBounds.size.width, imageBounds.size.height)];
 	[image lockFocus];
 	if (color != nil) {
 		[color set];
 	}
 	else {
-		[NSColor.blackColor set];
+		[COLOR_CLASS.blackColor set];
 	}
 	
 	CGFloat padding = 0.0;
@@ -1409,7 +1406,59 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[image unlockFocus];
 	
 	return image;
+#else
+#warning("Implement for iOS")
+	UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageBounds.size];
+	IMAGE_CLASS *image = [renderer imageWithActions:^(UIGraphicsImageRendererContext *rendererContext) {
+		CGContextRef cgContext = rendererContext.CGContext;
+		
+		//CGAffineTransform transform = CGAffineTransformMakeTranslation(0, imageBounds.size.height);
+		//transform = CGAffineTransformScale(transform, 1, -1);
+		//CGContextConcatCTM(cgContext, transform);
+		
+		CGRect fillRect = CGRectMake(0, 0, imageBounds.size.width, imageBounds.size.height);
+		
+		if (color != nil) {
+			[color setFill];
+		}
+		else {
+			[COLOR_CLASS.blackColor setFill];
+		}
+		
+		CGFloat padding = 0.0;
+		if (self.hasPadding) {
+			padding = 20.0;
+		}
+		
+		CGFloat verticalCenter = floor((fillRect.size.height / 2) - (self.thickness / 2));
+		
+		if (self.hasSpaces) {
+			CGFloat midPoint = (imageBounds.size.width / 2.0);
+			CGFloat spacing = 10.0;
+			
+			CGRect leftFillRect = CGRectMake(0 + padding, verticalCenter, midPoint - padding - spacing, self.thickness);
+			[rendererContext fillRect:leftFillRect];
+#if 1 // square dot
+			CGRect centerFillRect = CGRectMake(midPoint - (self.thickness / 2.0), verticalCenter, self.thickness, self.thickness);
+			[rendererContext fillRect:centerFillRect];
+#else // circular dot
+			CGRect centerFillRect = CGRectMake(midPoint - self.thickness, verticalCenter - self.thickness / 2.0, self.thickness * 2, self.thickness * 2);
+			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:centerFillRect];
+			[path fill];
+#endif
+			CGRect rightFillRect = CGRectMake(midPoint + spacing, verticalCenter, midPoint - padding - spacing, self.thickness);
+			[rendererContext fillRect:rightFillRect];
+		}
+		else {
+			CGRect fillRect = CGRectMake(0 + padding, verticalCenter, imageBounds.size.width - (padding * 2), self.thickness);
+			[rendererContext fillRect:fillRect];
+		}
 
+//		[rendererContext fillRect:fillRect];
+	}];
+	
+	return image;
+#endif
 }
 
 #pragma mark - NSSecureCoding
@@ -1446,8 +1495,8 @@ static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
 
 - (nullable instancetype)initWithCoder:(NSCoder *)decoder
 {
-	NSFont *font = [[NSFont alloc] initWithCoder:decoder];
-	NSColor *color = [[NSColor alloc] initWithCoder:decoder];
+	FONT_CLASS *font = [[FONT_CLASS alloc] initWithCoder:decoder];
+	COLOR_CLASS *color = [[COLOR_CLASS alloc] initWithCoder:decoder];
 
 	CGFloat thickness = [decoder decodeDoubleForKey:horizontalRuleThicknessCodingKey];
 	BOOL hasPadding = [decoder decodeBoolForKey:horizontalRulePaddingCodingKey];

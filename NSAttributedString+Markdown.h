@@ -35,6 +35,36 @@
 #import <UIKit/UIKit.h>
 #endif
 
+#if TARGET_OS_OSX
+
+#define FONT_CLASS NSFont
+#define FONT_DESCRIPTOR_CLASS NSFontDescriptor
+#define FONT_DESCRIPTOR_SYMBOLIC_TRAITS NSFontDescriptorSymbolicTraits
+#define FONT_DESCRIPTOR_TRAIT_BOLD NSFontDescriptorTraitBold
+#define FONT_DESCRIPTOR_TRAIT_ITALIC NSFontDescriptorTraitItalic
+#define FONT_DESCRIPTOR_CLASS_SYMBOLIC NSFontDescriptorClassSymbolic
+#define FONT_DESCRIPTOR_FAMILY_ATTRIBUTE NSFontFamilyAttribute
+
+#define COLOR_CLASS NSColor
+
+#define IMAGE_CLASS NSImage
+
+#else
+
+#define FONT_CLASS UIFont
+#define FONT_DESCRIPTOR_CLASS UIFontDescriptor
+#define FONT_DESCRIPTOR_SYMBOLIC_TRAITS UIFontDescriptorSymbolicTraits
+#define FONT_DESCRIPTOR_TRAIT_BOLD UIFontDescriptorTraitBold
+#define FONT_DESCRIPTOR_TRAIT_ITALIC UIFontDescriptorTraitItalic
+#define FONT_DESCRIPTOR_CLASS_SYMBOLIC UIFontDescriptorClassSymbolic
+#define FONT_DESCRIPTOR_FAMILY_ATTRIBUTE UIFontDescriptorFamilyAttribute
+
+#define COLOR_CLASS UIColor
+
+#define IMAGE_CLASS UIImage
+
+#endif
+
 #define ALLOW_HORIZONTAL_RULES 1	// CONFIGURATION - When enabled, horizontal rules use text attachments in the rich text attributes
 
 NS_ASSUME_NONNULL_BEGIN
@@ -88,12 +118,12 @@ extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionar
 
 @interface MarkdownHorizontalRuleTextAttachment : NSTextAttachment <NSSecureCoding>
 
-- (instancetype)initWithFont:(NSFont *)font color:(NSColor *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range;
+- (instancetype)initWithFont:(FONT_CLASS *)font color:(COLOR_CLASS *)color thickness:(CGFloat)thickness hasPadding:(BOOL)hasPadding hasSpaces:(BOOL)hasSpaces range:(NSRange)range;
 
 @property (nonatomic, assign, readonly) NSRange range;		// NOTE: this value does not update as text is edited: consider it a temporary variable.
 
-@property (nonatomic, strong, readonly) NSColor *color;
-@property (nonatomic, strong, readonly) NSFont *font;
+@property (nonatomic, strong, readonly) COLOR_CLASS *color;
+@property (nonatomic, strong, readonly) FONT_CLASS *font;
 @property (nonatomic, assign, readonly) CGFloat thickness;	// "***" = 2.0, "---" = 1.0
 @property (nonatomic, assign, readonly) BOOL hasPadding;	// "  ***  " or "  ------  "
 @property (nonatomic, assign, readonly) BOOL hasSpaces;		// "* * *" or "--- - ---"
