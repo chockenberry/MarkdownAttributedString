@@ -38,7 +38,8 @@
 									// \(including punctuation\!\)\. You'll probably find this irritating\. Not only is text harder to read \- it breaks
 									// many of the tests\.
 
-#define LOG_CONVERSIONS 0			// CONFIGURATION - When enabled, debug logging will include string conversion details.
+#define LOG_ATTRIBUTED_CONVERSIONS 0	// CONFIGURATION - When enabled, debug logging will include conversions to attributed string.
+#define LOG_MARKDOWN_CONVERSIONS 1		// CONFIGURATION - When enabled, debug logging will include conversions to Markdown text.
 
 #import "NSAttributedString+Markdown.h"
 
@@ -236,8 +237,6 @@ static void replaceAttributes(MarkdownSpanType spanType, NSDictionary<MarkdownSt
 	}];
 }
 
-#if ALLOW_HORIZONTAL_RULES
-
 static void updateAttributedStringBlock(NSMutableAttributedString *result, MarkdownBlockType blockType, NSDictionary<NSAttributedStringKey, id> *baseAttributes, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
 {
 	NSString *scanString = [result.string copy];
@@ -325,9 +324,7 @@ static void updateAttributedStringBlock(NSMutableAttributedString *result, Markd
 	}
 }
 
-#endif
-
-static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes)
+static void updateAttributedString(NSMutableAttributedString *result, NSString *beginMarker, NSString *dividerMarker, NSString *endMarker, MarkdownSpanType spanType, NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *styleAttributes, BOOL processBlockElements)
 {
 	NSStringCompareOptions options = 0;
 
@@ -337,29 +334,30 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 	
 	// check the input for horizontal rules and ignore markers that occur within their line's range
 	NSMutableArray *horizontalRuleRangeValues = [NSMutableArray array];
-#if ALLOW_HORIZONTAL_RULES
-	// the horizontal rules have already been converted to text attachments, so no conflict checks are needed.
-#else
-	NSString *rulerString = [beginMarker substringToIndex:1];
-	if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
-		NSRange checkRange = NSMakeRange(0, 1);
-		while (checkRange.location + checkRange.length < scanString.length) {
-			NSRange lineRange = [scanString lineRangeForRange:checkRange];
-			NSString *lineString = [scanString substringWithRange:lineRange];
-			
-			// NOTE: The Markdown syntax specifies three or more characters, but for our purposes, it's more than one of an asterisk or underline.
-			NSString *compressedString = [lineString stringByReplacingOccurrencesOfString:rulerString withString:@""];
-			NSString *trimmedString = [compressedString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-			if (trimmedString.length == 0) {
-				[horizontalRuleRangeValues addObject:[NSValue valueWithRange:lineRange]];
+	if (processBlockElements) {
+		// the horizontal rules have already been converted to text attachments, so no conflict checks are needed.
+	}
+	else {
+		NSString *rulerString = [beginMarker substringToIndex:1];
+		if ([rulerString isEqual:literalAsterisk] || [rulerString isEqual:literalUnderscore]) {
+			NSRange checkRange = NSMakeRange(0, 1);
+			while (checkRange.location + checkRange.length < scanString.length) {
+				NSRange lineRange = [scanString lineRangeForRange:checkRange];
+				NSString *lineString = [scanString substringWithRange:lineRange];
+				
+				// NOTE: The Markdown syntax specifies three or more characters, but for our purposes, it's more than one of an asterisk or underline.
+				NSString *compressedString = [lineString stringByReplacingOccurrencesOfString:rulerString withString:@""];
+				NSString *trimmedString = [compressedString stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+				if (trimmedString.length == 0) {
+					[horizontalRuleRangeValues addObject:[NSValue valueWithRange:lineRange]];
+				}
+				
+				checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 			}
-			
-			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 	}
-#endif
 	
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 	DebugLog(@"%s <<<< ---- '%@ %@ %@' start", "NSAttributedString+Markdown", (beginMarker ? beginMarker : @""), (dividerMarker ? dividerMarker : @""), (endMarker ? endMarker : @""));
 #endif
 		
@@ -411,7 +409,7 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 				BOOL abortEndScan = NO;
 				NSUInteger scanEndIndex = beginIndex;
 				if (scanEndIndex >= scanString.length) {
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 					DebugLog(@"%s <<<< .... end marker at end of string", "NSAttributedString+Markdown");
 #endif
 					abortScan = YES;
@@ -466,7 +464,7 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 						}
 						else {
 							// no divider in range, abort scanning for end marker, but continue scanning for begin marker at the end of the remaining range
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 							DebugLog(@"%s <<<< .... no divider marker in \"...%@...\"", "NSAttributedString+Markdown", [scanString substringWithRange:NSMakeRange(scanEndIndex, endRange.location - scanEndIndex)]);
 #endif
 						}
@@ -474,7 +472,7 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 					else {
 						// no end marker, abort scanning for end marker, but continue scanning for begin marker at the end of the remaining range
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 						NSString *textString = [scanString substringWithRange:NSMakeRange(beginIndex - beginMarker.length, (beginIndex + 10 < scanString.length ? 10 : scanString.length - beginIndex))];
 						NSString *logString = [textString stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
 						DebugLog(@"%s <<<< .... no end marker to match begin marker at \"%@...\"", "NSAttributedString+Markdown", logString);
@@ -492,7 +490,7 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 					NSUInteger endIndex = endRange.location;
 
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 					NSString *textString = [scanString substringWithRange:NSMakeRange(beginIndex, endIndex - beginIndex)];
 					NSString *logString = [textString stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
 					DebugLog(@"%s <<<<      \"%@\" (%ld)", "NSAttributedString+Markdown", logString, textString.length);
@@ -661,7 +659,7 @@ static void updateAttributedString(NSMutableAttributedString *result, NSString *
 		}
 	}
 
-#if LOG_CONVERSIONS
+#if LOG_ATTRIBUTED_CONVERSIONS
 	DebugLog(@"%s <<<< ---- '%@ %@ %@' end", "NSAttributedString+Markdown", (beginMarker ? beginMarker : @""), (dividerMarker ? dividerMarker : @""), (endMarker ? endMarker : @""));
 	DebugLog(@"%s", "NSAttributedString+Markdown");
 #endif
@@ -699,10 +697,15 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 
 - (instancetype)initWithMarkdownRepresentation:(NSString *)markdownString attributes:(NSDictionary<NSAttributedStringKey, id> *)attributes
 {
-	return [self initWithMarkdownRepresentation:markdownString baseAttributes:attributes styleAttributes:nil];
+	return [self initWithMarkdownRepresentation:markdownString baseAttributes:attributes styleAttributes:nil processBlockElements:NO];
 }
 
-- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownString baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes;
+- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownString baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes
+{
+	return [self initWithMarkdownRepresentation:markdownString baseAttributes:baseAttributes styleAttributes:styleAttributes processBlockElements:NO];
+}
+
+- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownString baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes processBlockElements:(BOOL)processBlockElements;
 {
 	NSAssert(baseAttributes[NSFontAttributeName] != nil, @"A font attribute is required");
 	
@@ -712,29 +715,29 @@ static void removeEscapedCharacterSetInAttributedString(NSMutableAttributedStrin
 	// applied as the Markdown syntax is processed by updateAttributedString().
 	NSMutableAttributedString *result = [[NSMutableAttributedString alloc] initWithString:markdownString attributes:baseAttributes];
 
-#if ALLOW_HORIZONTAL_RULES
-	updateAttributedStringBlock(result, MarkdownBlockHorizontalRule, baseAttributes, styleAttributes);
-#endif
+	if (processBlockElements) {
+		updateAttributedStringBlock(result, MarkdownBlockHorizontalRule, baseAttributes, styleAttributes);
+	}
 
 #if ALLOW_LINKS
     // replace [] and () markers with a link attribute
 	NSString *linkInlineDividerMarker = [linkInlineStartDivider stringByAppendingString:linkInlineEndDivider];
-    updateAttributedString(result, linkInlineStart, linkInlineDividerMarker, linkInlineEnd, MarkdownSpanLinkInline, styleAttributes);
+    updateAttributedString(result, linkInlineStart, linkInlineDividerMarker, linkInlineEnd, MarkdownSpanLinkInline, styleAttributes, processBlockElements);
 
     // replace < and > markers with a link attribute
-    updateAttributedString(result, linkAutomaticStart, nil, linkAutomaticEnd, MarkdownSpanLinkAutomatic, styleAttributes);
+    updateAttributedString(result, linkAutomaticStart, nil, linkAutomaticEnd, MarkdownSpanLinkAutomatic, styleAttributes, processBlockElements);
 #endif
 	
 	// replace ** and __ markers with bold font traits or MarkdownStyleEmphasisDouble style attributes
-	updateAttributedString(result, emphasisDoubleStart, nil, emphasisDoubleEnd, MarkdownSpanEmphasisDouble, styleAttributes);
+	updateAttributedString(result, emphasisDoubleStart, nil, emphasisDoubleEnd, MarkdownSpanEmphasisDouble, styleAttributes, processBlockElements);
 #if ALLOW_ALTERNATES
-	updateAttributedString(result, emphasisDoubleAlternateStart, nil, emphasisDoubleAlternateEnd, MarkdownSpanEmphasisDouble, styleAttributes);
+	updateAttributedString(result, emphasisDoubleAlternateStart, nil, emphasisDoubleAlternateEnd, MarkdownSpanEmphasisDouble, styleAttributes, processBlockElements);
 #endif
 	
 	// replace _ and _ markers with italic font traits or MarkdownStyleEmphasisSingle style attributes
-	updateAttributedString(result, emphasisSingleStart, nil, emphasisSingleEnd, MarkdownSpanEmphasisSingle, styleAttributes);
+	updateAttributedString(result, emphasisSingleStart, nil, emphasisSingleEnd, MarkdownSpanEmphasisSingle, styleAttributes, processBlockElements);
 #if ALLOW_ALTERNATES
-	updateAttributedString(result, emphasisSingleAlternateStart, nil, emphasisSingleAlternateEnd, MarkdownSpanEmphasisSingle, styleAttributes);
+	updateAttributedString(result, emphasisSingleAlternateStart, nil, emphasisSingleAlternateEnd, MarkdownSpanEmphasisSingle, styleAttributes, processBlockElements);
 #endif
 
 	// remove backslashes from any escaped markers that haven't already been converted
@@ -912,7 +915,7 @@ static void updateMarkdownString(NSMutableString *result, NSString *string, NSSt
 		[result appendString:suffix];
 	}
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_MARKDOWN_CONVERSIONS
 	NSString *logString = [text stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
 	DebugLog(@"%s >>>> '%@'(%ld) '%@'(%ld) '%@'(%ld)", "NSAttributedString+Markdown", (prefixString ? prefixString : @""), prefixString.length, logString, text.length, (suffixString ? suffixString : @""), suffixString.length);
 #endif
@@ -930,7 +933,7 @@ static FONT_DESCRIPTOR_SYMBOLIC_TRAITS symbolicTraitsForAttributes(NSDictionary<
 			result = fontDescriptor.symbolicTraits;
 		}
 		else {
-#if LOG_CONVERSIONS
+#if LOG_MARKDOWN_CONVERSIONS
 			DebugLog(@"%s >>>> no symbolic traits", "NSAttributedString+Markdown");
 #endif
 		}
@@ -977,7 +980,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	if ([currentString stringByTrimmingCharactersInSet: characterSet].length == 0) {
 		// current string only has whitespace, so we can ignore it
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_MARKDOWN_CONVERSIONS
 		NSString *logString = [currentString stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
 		FONT_CLASS *logFont = currentAttributes[NSFontAttributeName];
 		DebugLog(@"%s >>>> %s %s %s (%@) [%@] %@", "NSAttributedString+Markdown", ".", ".", ".", logString, logFont.fontName, NSStringFromRange(currentRange));
@@ -1036,7 +1039,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		BOOL nextRangeHasItalic = (nextSymbolicTraits & FONT_DESCRIPTOR_TRAIT_ITALIC) != 0;
 		
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_MARKDOWN_CONVERSIONS
 		BOOL currentRangeHasSymbolic = (currentSymbolicTraits & FONT_DESCRIPTOR_CLASS_SYMBOLIC) != 0;
 		NSString *logString = [currentString stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
 		FONT_CLASS *logFont = currentAttributes[NSFontAttributeName];
@@ -1109,7 +1112,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
-#if ALLOW_HORIZONTAL_RULES
 	if (cleanAttributedString.length > 0) {
 		unichar character = NSAttachmentCharacter;
 		NSString *attachment = [NSString stringWithCharacters:&character length:1];
@@ -1129,6 +1131,8 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 					needsSuffix = YES;
 				}
 			}
+	
+			NSString *replacement = @"";
 			NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
 			id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
 			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[MarkdownHorizontalRuleTextAttachment class]]) {
@@ -1149,7 +1153,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				if (textAttachment.thickness == 2.0) {
 					character = @"*";
 				}
-				NSString *replacement = nil;
 				if (textAttachment.hasSpaces) {
 					NSString *divider = [@"" stringByPaddingToLength:halfWidth withString:character startingAtIndex:0];
 					replacement = [NSString stringWithFormat:@"%@ %@ %@", divider, character, divider];
@@ -1166,15 +1169,16 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				if (needsSuffix) {
 					replacement = [replacement stringByAppendingString:@"\n"];
 				}
-				[cleanAttributedString replaceCharactersInRange:range withString:replacement];
 			}
-			else {
-				[cleanAttributedString replaceCharactersInRange:range withString:@""];
-			}
+
+			// remove the attributes that will affect the Markdown that's emitted below
+			[cleanAttributedString removeAttribute:NSFontAttributeName range:range];
+			[cleanAttributedString removeAttribute:NSAttachmentAttributeName range:range];
+			[cleanAttributedString replaceCharactersInRange:range withString:replacement];
+			
 			range = [cleanAttributedString.string rangeOfString:attachment];
 		}
 	}
-#endif
 	
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
@@ -1204,7 +1208,7 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			NSArray<NSString *> *currentStringComponents = [currentString componentsSeparatedByString:visualLineBreak];
 			
 #if DEBUG
-#if LOG_CONVERSIONS
+#if LOG_MARKDOWN_CONVERSIONS
 			NSUInteger componentCount = 1;
 			for (NSString *currentStringComponent in currentStringComponents) {
 				NSString *logString = [currentStringComponent stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
@@ -1271,7 +1275,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			}
 		}
 
-#if ALLOW_HORIZONTAL_RULES
 		BOOL rangeHasAttachment = NO;
 		NSString *attachmentString = @"";
 		id attachment = attributes[NSAttachmentAttributeName];
@@ -1282,9 +1285,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 				attachmentString = [NSString stringWithFormat:@"-%.0f%s%s-", textAttachment.thickness, (textAttachment.hasPadding ? "P" : ""), (textAttachment.hasSpaces ? "S" : "")];
 			}
 		}
-#else
-		NSString *attachmentString = @"";
-#endif
 		
 		NSString *rangeString = [NSString stringWithFormat:@"[%@](%s%s)%@%@", [self.string substringWithRange:range], (rangeHasBold ? "B" : " "), (rangeHasItalic ? "I" : " "), linkString, attachmentString];
 		[result appendString:rangeString];
@@ -1299,8 +1299,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 @end
 
 #pragma mark - MarkdownHorizontalRuleTextAttachment
-
-#if ALLOW_HORIZONTAL_RULES
 
 @implementation MarkdownHorizontalRuleTextAttachment
 
@@ -1407,14 +1405,9 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	
 	return image;
 #else
-#warning("Implement for iOS")
 	UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageBounds.size];
 	IMAGE_CLASS *image = [renderer imageWithActions:^(UIGraphicsImageRendererContext *rendererContext) {
 		CGContextRef cgContext = rendererContext.CGContext;
-		
-		//CGAffineTransform transform = CGAffineTransformMakeTranslation(0, imageBounds.size.height);
-		//transform = CGAffineTransformScale(transform, 1, -1);
-		//CGContextConcatCTM(cgContext, transform);
 		
 		CGRect fillRect = CGRectMake(0, 0, imageBounds.size.width, imageBounds.size.height);
 		
@@ -1438,12 +1431,12 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 			
 			CGRect leftFillRect = CGRectMake(0 + padding, verticalCenter, midPoint - padding - spacing, self.thickness);
 			[rendererContext fillRect:leftFillRect];
-#if 1 // square dot
+#if 0 // square dot
 			CGRect centerFillRect = CGRectMake(midPoint - (self.thickness / 2.0), verticalCenter, self.thickness, self.thickness);
 			[rendererContext fillRect:centerFillRect];
 #else // circular dot
 			CGRect centerFillRect = CGRectMake(midPoint - self.thickness, verticalCenter - self.thickness / 2.0, self.thickness * 2, self.thickness * 2);
-			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:centerFillRect];
+			UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:centerFillRect];
 			[path fill];
 #endif
 			CGRect rightFillRect = CGRectMake(midPoint + spacing, verticalCenter, midPoint - padding - spacing, self.thickness);
@@ -1509,5 +1502,3 @@ static NSString *const horizontalRuleSpacesCodingKey = @"spaces";
 }
 
 @end
-
-#endif

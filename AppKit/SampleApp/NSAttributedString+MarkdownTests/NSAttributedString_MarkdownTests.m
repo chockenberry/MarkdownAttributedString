@@ -48,11 +48,26 @@ static BOOL checkMarkdownToRichText(NSString *testString, NSString *compareStrin
 	return [checkString isEqual:compareString];
 }
 
+static BOOL checkMarkdownToRichTextWithBlockElements(NSString *testString, NSString *compareString)
+{
+	NSAttributedString *attributedTestString = [[NSAttributedString alloc] initWithMarkdownRepresentation:testString baseAttributes:@{ NSFontAttributeName: [NSFont systemFontOfSize:12.0] } styleAttributes:nil processBlockElements:YES];
+	NSString *checkString = [attributedTestString markdownDebug];
+	NSLog(@"%s checkString = %@", __PRETTY_FUNCTION__, checkString);
+	return [checkString isEqual:compareString];
+}
+
 static BOOL checkRichTextToMarkdown(NSAttributedString *testString, NSString *compareString)
 {
 	NSString *checkString = [testString markdownRepresentation];
 	NSLog(@"%s checkString = %@", __PRETTY_FUNCTION__, checkString);
 	return [checkString isEqual:compareString];
+}
+
+static BOOL checkMarkdownRoundTripWithBlockElements(NSString *testString)
+{
+	NSAttributedString *attributedTestString = [[NSAttributedString alloc] initWithMarkdownRepresentation:testString baseAttributes:@{ NSFontAttributeName: [NSFont systemFontOfSize:12.0] } styleAttributes:nil processBlockElements:YES];
+	NSString *checkString = [attributedTestString markdownRepresentation];
+	return [checkString isEqual:testString];
 }
 
 static BOOL checkMarkdownRoundTrip(NSString *testString)
@@ -257,7 +272,6 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
 
-#if ALLOW_HORIZONTAL_RULES
 - (void)testHorizontalRules
 {
 	// https://daringfireball.net/projects/markdown/syntax#hr
@@ -266,13 +280,13 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	// NOTE: There are NSAttachmentCharacter (U+FFFC) code points in the compareString below.
 	NSString *testString1 = @"* * *\n***\n*****\n  *  *  *  \n*** ***\n_ _ _\n___\n_____\n  _ _ _ \n___ ___\n --- \n";
 	NSString *compareString = @"[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2PS-[\\n](  )[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1PS-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1P-[\\n](  )";
-	XCTAssert(checkMarkdownToRichText(testString1, compareString), @"Markdown to rich text test failed");
+	XCTAssert(checkMarkdownToRichTextWithBlockElements(testString1, compareString), @"Markdown to rich text with text attachments test failed");
 	
 	// NOTE: Horizontal rules are normalized, so the arbitrary input in testString1 cannot be reused here.
 	NSString *testString2 = @"* * *\n***\n*****\n  * * *\n  *** * ***\n- - -\n---\n  -----\n  ---- - ----\n";
-	XCTAssert(checkMarkdownRoundTrip(testString2), @"Round-trip test failed");
+	XCTAssert(checkMarkdownRoundTripWithBlockElements(testString2), @"Round-trip test failed");
 }
-#else
+
 - (void)testIgnoreHorizontalRules
 {
 	// https://daringfireball.net/projects/markdown/syntax#hr
@@ -283,7 +297,6 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
 	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
 }
-#endif
 
 - (void)testForPeopleWhoDoMarkdownWrong
 {

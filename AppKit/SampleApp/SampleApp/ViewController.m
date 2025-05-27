@@ -15,6 +15,7 @@ static NSString *const savedStringKey = @"savedString";
 #import "NSAttributedString+Markdown.h"
 
 #define USE_STYLE_ATTRIBUTES 1		// Enable this to use extended style attributes for the Markdown to attributed string conversions
+#define PROCESS_BLOCK_ELEMENTS YES	// Set this to NO to ignore block elements in Markdown (currently only horizontal rules are supported)
 
 @interface ViewController () <NSTextViewDelegate>
 
@@ -199,7 +200,7 @@ static NSString *const savedStringKey = @"savedString";
 #if !USE_STYLE_ATTRIBUTES
 	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString attributes:self.baseAttributes];
 #else
-	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes];
+	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes processBlockElements:PROCESS_BLOCK_ELEMENTS];
 #endif
 	[self.richTextTextView.textStorage setAttributedString:attributedString];
 	
@@ -217,7 +218,7 @@ static NSString *const savedStringKey = @"savedString";
 #if !USE_STYLE_ATTRIBUTES
 	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString attributes:self.baseAttributes];
 #else
-	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes];
+	NSAttributedString *attributedString = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes processBlockElements:PROCESS_BLOCK_ELEMENTS];
 #endif
 	[self.richTextTextView.textStorage setAttributedString:attributedString];
 	
@@ -239,7 +240,7 @@ static NSString *const savedStringKey = @"savedString";
 #if !USE_STYLE_ATTRIBUTES
 		NSAttributedString *richTextString = [[NSAttributedString alloc] initWithMarkdownRepresentation:self.markdownTextView.string attributes:self.baseAttributes];
 #else
-		NSAttributedString *richTextString = [[NSAttributedString alloc] initWithMarkdownRepresentation:self.markdownTextView.string baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes];
+		NSAttributedString *richTextString = [[NSAttributedString alloc] initWithMarkdownRepresentation:self.markdownTextView.string baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes processBlockElements:PROCESS_BLOCK_ELEMENTS];
 #endif
 		
 		// NOTE: The logging below is helpful for generating tests in teh NSAttributedString+MarkdownTest target. Use the SampleApp to reproduce a

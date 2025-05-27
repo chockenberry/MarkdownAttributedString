@@ -99,8 +99,9 @@ extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionar
 @interface NSAttributedString (Markdown)
 
 - (instancetype)initWithMarkdownRepresentation:(NSString *)markdownRepresentation attributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)attributes;
+- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownString baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes;
 
-- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownRepresentation baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes;
+- (instancetype)initWithMarkdownRepresentation:(NSString *)markdownRepresentation baseAttributes:(nonnull NSDictionary<NSAttributedStringKey, id> *)baseAttributes styleAttributes:(nullable NSDictionary<MarkdownStyleKey, NSDictionary<NSAttributedStringKey, id> *> *)styleAttributes processBlockElements:(BOOL)processBlockElements;
 
 @property (nonatomic, readonly) NSString *markdownRepresentation;
 
@@ -113,8 +114,6 @@ extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionar
 
 
 #pragma mark - Markdown Horizontal Rule
-
-#if ALLOW_HORIZONTAL_RULES
 
 @interface MarkdownHorizontalRuleTextAttachment : NSTextAttachment <NSSecureCoding>
 
@@ -130,7 +129,5 @@ extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionar
 @property (nonatomic, assign, readonly) NSInteger width;	// "***" = 3, "-----" = 5, "-- - --" = 7
 
 @end
-
-#endif
 
 NS_ASSUME_NONNULL_END
