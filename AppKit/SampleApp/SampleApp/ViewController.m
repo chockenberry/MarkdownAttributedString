@@ -156,7 +156,12 @@ static NSString *const savedStringKey = @"savedString";
 #if 1
 	[self.richTextTextView updateWithAttributedString:attachment inRange:range];
 	NSUInteger end;
-	[self.richTextTextView.string getLineStart:NULL end:&end contentsEnd:NULL forRange:NSMakeRange(range.location + 1, 1)];
+	if (range.location < self.richTextTextView.string.length - 1) {
+		[self.richTextTextView.string getLineStart:NULL end:&end contentsEnd:NULL forRange:NSMakeRange(range.location + 1, 1)];
+	}
+	else {
+		end = self.richTextTextView.string.length;
+	}
 	self.richTextTextView.selectedRange = NSMakeRange(end, 0); // 3 = newline, attachment, newline
 #else
 	NSMutableAttributedString *replacement = [[NSMutableAttributedString alloc] initWithAttributedString:attachment];

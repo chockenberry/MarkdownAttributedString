@@ -39,7 +39,7 @@
 									// many of the tests\.
 
 #define LOG_ATTRIBUTED_CONVERSIONS 0	// CONFIGURATION - When enabled, debug logging will include conversions to attributed string.
-#define LOG_MARKDOWN_CONVERSIONS 1		// CONFIGURATION - When enabled, debug logging will include conversions to Markdown text.
+#define LOG_MARKDOWN_CONVERSIONS 0		// CONFIGURATION - When enabled, debug logging will include conversions to Markdown text.
 
 #import "NSAttributedString+Markdown.h"
 
@@ -55,6 +55,7 @@
 NSString *const literalBackslash = @"\\";
 NSString *const literalAsterisk = @"*";
 NSString *const literalUnderscore = @"_";
+NSString *const literalMinusSign = @"-"; // used for horizontal rulers only
 
 #if ALLOW_ALL_LITERALS
 NSString *const literalBacktick = @"`";
@@ -66,7 +67,6 @@ NSString *const literalParenthesesOpen = @"(";
 NSString *const literalParenthesesClose = @")";
 NSString *const literalHashMark = @"#";
 NSString *const literalPlusSign = @"+";
-NSString *const literalMinusSign = @"-";
 NSString *const literalDot = @".";
 NSString *const literalExclamationPoint = @"!";
 #endif
@@ -812,59 +812,70 @@ static void addEscapesInMarkdownString(NSMutableString *text, NSString *marker)
 			NSRange range = [text rangeOfString:marker options:0 range:NSMakeRange(scanIndex, text.length - scanIndex)];
 			if (range.length > 0) {
 				// found marker
+
+				BOOL insertEscape = NO;
 				
-				BOOL isHorizontalRuler = NO;
-				if (range.location == 0 || hasCharacterRelative(text, range, prefixOffset, newlineCharacter)) {
-					// NOTE: At the start of a new line, check if there is nothing but three markers and additional space until the end of the line (and is therefore a horizontal ruler).
-					NSString *remainderText = [text substringFromIndex:range.location];
-					NSRange remainderRange = [remainderText rangeOfString:@"\n"];
-					if (remainderRange.location != NSNotFound) {
-						remainderText = [remainderText substringToIndex:remainderRange.location];
-					}
-					NSString *characterText = [remainderText stringByReplacingOccurrencesOfString:@" " withString:@""];
-					NSString *checkText = [characterText stringByReplacingOccurrencesOfString:marker withString:@""];
-					if (checkText.length == 0 && characterText.length >= 3) {
-						isHorizontalRuler = YES;
-						// no escapes are added, and scanning continues at end of line
-						scanIndex = range.location + range.length + remainderText.length - 1;
-					}
+				// NOTE: Check if marker surrounded by whitespace. On entry, the text range has already been adjusted for whitespace using adjustRangeForWhitespace().
+				// If the range is at the beginning or end of the text, we can assume that there's whitespace before or after.
+				BOOL hasPrefixSpace = YES;
+				BOOL hasSuffixSpace = YES;
+				
+				if (range.location == 0) {
+					hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
+				}
+				else if (range.location == (text.length - 1)) {
+					hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+				}
+				else {
+					hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
+					hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
 				}
 				
-				if (! isHorizontalRuler) {
-					BOOL insertEscape = NO;
-					
-					// NOTE: Check if marker surrounded by whitespace. On entry, the text range has already been adjusted for whitespace using adjustRangeForWhitespace().
-					// If the range is at the beginning or end of the text, we can assume that there's whitespace before or after.
-					BOOL hasPrefixSpace = YES;
-					BOOL hasSuffixSpace = YES;
-					
-					if (range.location == 0) {
-						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
-					}
-					else if (range.location == (text.length - 1)) {
-						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
-					}
-					else {
-						hasPrefixSpace = hasCharacterRelative(text, range, prefixOffset, spaceCharacter) || hasCharacterRelative(text, range, prefixOffset, tabCharacter) || hasCharacterRelative(text, range, prefixOffset, newlineCharacter);
-						hasSuffixSpace = hasCharacterRelative(text, range, suffixOffset, spaceCharacter) || hasCharacterRelative(text, range, suffixOffset, tabCharacter) || hasCharacterRelative(text, range, suffixOffset, newlineCharacter);
-					}
-					
-					if (! (hasPrefixSpace && hasSuffixSpace)) {
-						insertEscape = YES;
-					}
-					
-					if (insertEscape) {
-						[text insertString:literalBackslash atIndex:range.location];
-						scanIndex = range.location + range.length + literalBackslash.length;
-					}
-					else {
-						scanIndex = range.location + range.length;
-					}
+				if (! (hasPrefixSpace && hasSuffixSpace)) {
+					insertEscape = YES;
+				}
+				
+				if (insertEscape) {
+					[text insertString:literalBackslash atIndex:range.location];
+					scanIndex = range.location + range.length + literalBackslash.length;
+				}
+				else {
+					scanIndex = range.location + range.length;
 				}
 			}
 			else {
 				needsScan = NO;
 			}
+		}
+	}
+}
+
+static void addEscapesForHorizontalRulers(NSMutableString *text, NSString *marker)
+{
+	NSRange checkRange = NSMakeRange(0, 1);
+	while (checkRange.location + checkRange.length < text.length) {
+		NSRange lineRange = [text lineRangeForRange:checkRange];
+		NSString *lineString = [text substringWithRange:lineRange];
+		if ([lineString hasSuffix:@"\n"]) {
+			lineString = [lineString substringToIndex:lineString.length - 1];
+		}
+		
+		BOOL isHorizontalRuler = NO;
+		NSString *characterText = [lineString stringByReplacingOccurrencesOfString:@" " withString:@""];
+		if (characterText.length >= 3) {
+			NSString *checkText = [characterText stringByReplacingOccurrencesOfString:marker withString:@""];
+			if (checkText.length == 0) {
+				isHorizontalRuler = YES;
+
+			}
+		}
+
+		if (isHorizontalRuler) {
+			NSString *replacement = [literalBackslash stringByAppendingString:marker];
+			[text replaceOccurrencesOfString:marker withString:replacement options:(0) range:lineRange];
+		}
+		else {
+			checkRange = NSMakeRange(lineRange.location + lineRange.length, 1);
 		}
 	}
 }
@@ -903,6 +914,11 @@ static void updateMarkdownString(NSMutableString *result, NSString *string, NSSt
 		addEscapesInMarkdownString(text, literalDot);
 		addEscapesInMarkdownString(text, literalExclamationPoint);
 #endif
+
+		addEscapesForHorizontalRulers(text, literalMinusSign);
+		addEscapesForHorizontalRulers(text, literalAsterisk);
+		addEscapesForHorizontalRulers(text, literalUnderscore);
+		
 	}
 	[result appendString:[text copy]];
 
@@ -1112,73 +1128,6 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	[cleanAttributedString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 	[cleanAttributedString removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, cleanAttributedString.length)];
 
-	if (cleanAttributedString.length > 0) {
-		unichar character = NSAttachmentCharacter;
-		NSString *attachment = [NSString stringWithCharacters:&character length:1];
-		NSRange range = [cleanAttributedString.string rangeOfString:attachment];
-		while (range.location != NSNotFound) {
-			BOOL needsPrefix = NO;
-			if (range.location > 0) {
-				NSString *prefix = [cleanAttributedString.string substringWithRange:NSMakeRange(range.location - 1, 1)];
-				if (![prefix isEqualToString:@"\n"]) {
-					needsPrefix = YES;
-				}
-			}
-			BOOL needsSuffix = NO;
-			if (range.location + range.length < cleanAttributedString.string.length - 1) {
-				NSString *suffix = [cleanAttributedString.string substringWithRange:NSMakeRange(range.location + range.length, 1)];
-				if (![suffix isEqualToString:@"\n"]) {
-					needsSuffix = YES;
-				}
-			}
-	
-			NSString *replacement = @"";
-			NSDictionary<NSString *, id> *attributes = [cleanAttributedString attributesAtIndex:range.location effectiveRange:nil];
-			id attachmentObject = [attributes objectForKey:NSAttachmentAttributeName];
-			if (attachmentObject != nil && [attachmentObject isMemberOfClass:[MarkdownHorizontalRuleTextAttachment class]]) {
-				MarkdownHorizontalRuleTextAttachment *textAttachment = (MarkdownHorizontalRuleTextAttachment *)attachmentObject;
-				NSInteger width = textAttachment.width;
-				if (textAttachment.hasSpaces) {
-					width = width - 3;
-				}
-				if (textAttachment.hasPadding) {
-					width = width - 2;
-				}
-				if (width < 3) {
-					width = 3;
-				}
-				NSInteger halfWidth = width / 2;
-				
-				NSString *character = @"-";
-				if (textAttachment.thickness == 2.0) {
-					character = @"*";
-				}
-				if (textAttachment.hasSpaces) {
-					NSString *divider = [@"" stringByPaddingToLength:halfWidth withString:character startingAtIndex:0];
-					replacement = [NSString stringWithFormat:@"%@ %@ %@", divider, character, divider];
-				}
-				else {
-					replacement = [@"" stringByPaddingToLength:width withString:character startingAtIndex:0];
-				}
-				if (textAttachment.hasPadding) {
-					replacement = [NSString stringWithFormat:@"  %@", replacement];
-				}
-				if (needsPrefix) {
-					replacement = [@"\n" stringByAppendingString:replacement];
-				}
-				if (needsSuffix) {
-					replacement = [replacement stringByAppendingString:@"\n"];
-				}
-			}
-
-			// remove the attributes that will affect the Markdown that's emitted below
-			[cleanAttributedString removeAttribute:NSFontAttributeName range:range];
-			[cleanAttributedString removeAttribute:NSAttachmentAttributeName range:range];
-			[cleanAttributedString replaceCharactersInRange:range withString:replacement];
-			
-			range = [cleanAttributedString.string rangeOfString:attachment];
-		}
-	}
 	
 	NSAttributedString *normalizedAttributedString = [cleanAttributedString copy];
 	NSString *normalizedString = normalizedAttributedString.string;
@@ -1192,45 +1141,78 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 		NSRange currentRange;
 		NSDictionary<NSAttributedStringKey, id> *currentAttributes = [normalizedAttributedString attributesAtIndex:index effectiveRange:&currentRange];
 		NSString *currentString = [normalizedString substringWithRange:currentRange];
-		
+
 		NSDictionary<NSAttributedStringKey, id> *nextAttributes = nil;
-		NSUInteger nextIndex = currentRange.location + currentRange.length;
-		if (nextIndex < normalizedLength) {
-			nextAttributes = [normalizedAttributedString attributesAtIndex:nextIndex effectiveRange:NULL];
+
+		id attachmentObject = [currentAttributes objectForKey:NSAttachmentAttributeName];
+		if (attachmentObject != nil && [attachmentObject isMemberOfClass:[MarkdownHorizontalRuleTextAttachment class]]) {
+			MarkdownHorizontalRuleTextAttachment *textAttachment = (MarkdownHorizontalRuleTextAttachment *)attachmentObject;
+			NSString *attachmentMarkdownText = textAttachment.markdownRepresentation;
+			
+			NSString *checkString = normalizedAttributedString.string;
+			BOOL needsPrefix = NO;
+			if (currentRange.location > 0) {
+				NSString *prefix = [checkString substringWithRange:NSMakeRange(currentRange.location - 1, 1)];
+				if (! [prefix isEqualToString:@"\n"]) {
+					needsPrefix = YES;
+				}
+			}
+			BOOL needsSuffix = NO;
+			if (currentRange.location + currentRange.length < checkString.length - 1) {
+				NSString *suffix = [checkString substringWithRange:NSMakeRange(currentRange.location + currentRange.length, 1)];
+				if (! [suffix isEqualToString:@"\n"]) {
+					needsSuffix = YES;
+				}
+			}
+
+			if (needsPrefix) {
+				attachmentMarkdownText = [@"\n" stringByAppendingString:attachmentMarkdownText];
+			}
+			if (needsSuffix) {
+				attachmentMarkdownText = [attachmentMarkdownText stringByAppendingString:@"\n"];
+			}
+
+			[result appendString:attachmentMarkdownText];
 		}
 		else {
-			// leave nextAttributes as nil to signal that we're at the last range (in emitMarkdown)
-		}
-
-		// check if current range contains one or more visual breaks, if it does each piece will be emitted separately
-		if ([currentString containsString:visualLineBreak]) {
-
-			NSArray<NSString *> *currentStringComponents = [currentString componentsSeparatedByString:visualLineBreak];
+			NSUInteger nextIndex = currentRange.location + currentRange.length;
+			if (nextIndex < normalizedLength) {
+				nextAttributes = [normalizedAttributedString attributesAtIndex:nextIndex effectiveRange:NULL];
+			}
+			else {
+				// leave nextAttributes as nil to signal that we're at the last range (in emitMarkdown)
+			}
 			
+			// check if current range contains one or more visual breaks, if it does each piece will be emitted separately
+			if ([currentString containsString:visualLineBreak]) {
+				
+				NSArray<NSString *> *currentStringComponents = [currentString componentsSeparatedByString:visualLineBreak];
+				
 #if DEBUG
 #if LOG_MARKDOWN_CONVERSIONS
-			NSUInteger componentCount = 1;
-			for (NSString *currentStringComponent in currentStringComponents) {
-				NSString *logString = [currentStringComponent stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-				DebugLog(@"%s >>>> %s %s %s [%ld of %ld] (%@)", "NSAttributedString+Markdown", "-", "-", "-", componentCount, currentStringComponents.count, logString);
-				componentCount += 1;
-			}
+				NSUInteger componentCount = 1;
+				for (NSString *currentStringComponent in currentStringComponents) {
+					NSString *logString = [currentStringComponent stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
+					DebugLog(@"%s >>>> %s %s %s [%ld of %ld] (%@)", "NSAttributedString+Markdown", "-", "-", "-", componentCount, currentStringComponents.count, logString);
+					componentCount += 1;
+				}
 #endif
 #endif
-			
-			// NOTE: The first component doesn't include the visual line break sequence (\n\n) but subsequent components do by adjusting the visualLineBreakOffset.
-			NSUInteger visualLineBreakOffset = 0;
-			NSRange currentComponentRange = NSMakeRange(currentRange.location, 0);
-			for (NSString *currentStringComponent in currentStringComponents) {
-				currentComponentRange.length = currentStringComponent.length + visualLineBreakOffset;
-				emitMarkdown(result, normalizedString, currentStringComponent, currentComponentRange, currentAttributes, nextAttributes, &inBoldRun, &inItalicRun);
-				currentComponentRange.location = currentComponentRange.location + currentStringComponent.length + visualLineBreakOffset;
 				
-				visualLineBreakOffset = visualLineBreak.length;
+				// NOTE: The first component doesn't include the visual line break sequence (\n\n) but subsequent components do by adjusting the visualLineBreakOffset.
+				NSUInteger visualLineBreakOffset = 0;
+				NSRange currentComponentRange = NSMakeRange(currentRange.location, 0);
+				for (NSString *currentStringComponent in currentStringComponents) {
+					currentComponentRange.length = currentStringComponent.length + visualLineBreakOffset;
+					emitMarkdown(result, normalizedString, currentStringComponent, currentComponentRange, currentAttributes, nextAttributes, &inBoldRun, &inItalicRun);
+					currentComponentRange.location = currentComponentRange.location + currentStringComponent.length + visualLineBreakOffset;
+					
+					visualLineBreakOffset = visualLineBreak.length;
+				}
 			}
-		}
-		else {
-			emitMarkdown(result, normalizedString, currentString, currentRange, currentAttributes, nextAttributes, &inBoldRun, &inItalicRun);
+			else {
+				emitMarkdown(result, normalizedString, currentString, currentRange, currentAttributes, nextAttributes, &inBoldRun, &inItalicRun);
+			}
 		}
 		
 		index = currentRange.location + currentRange.length;
@@ -1329,18 +1311,18 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 - (CGRect)attachmentBoundsForAttributes:(NSDictionary<NSAttributedStringKey,id> *)attributes location:(id<NSTextLocation>)location textContainer:(NSTextContainer *)textContainer proposedLineFragment:(CGRect)proposedLineFragment position:(CGPoint)position
 {
 #if TARGET_OS_OSX
-	NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	//NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
 	if (self.font != nil && textContainer.textView.window != nil) {
 		proposedLineFragment.size.height = floor((self.font.ascender + self.font.descender + self.font.leading) * textContainer.textView.window.backingScaleFactor);
 	}
-	NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
+	//NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromRect(proposedLineFragment));
 	return proposedLineFragment;
 #else
-	NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
+	//NSLog(@"%s NSTextAttachment: proposedLineFragment = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
 	if (self.font != nil) {
 		proposedLineFragment.size.height = self.font.lineHeight;
 	}
-	NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
+	//NSLog(@"%s NSTextAttachment: return = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(proposedLineFragment));
 	return proposedLineFragment;
 #endif
 }
@@ -1348,9 +1330,9 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 - (IMAGE_CLASS *)imageForBounds:(CGRect)imageBounds textContainer:(NSTextContainer *)textContainer characterIndex:(NSUInteger)charIndex
 {
 #if TARGET_OS_OSX
-	NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromRect(imageBounds));
+	//NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromRect(imageBounds));
 #else
-	NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(imageBounds));
+	//NSLog(@"%s NSTextAttachment: imageBounds = %@", __PRETTY_FUNCTION__, NSStringFromCGRect(imageBounds));
 #endif
 	self.image = [self imageForBounds:imageBounds withColor:nil];
 	self.bounds = imageBounds;
@@ -1452,6 +1434,78 @@ static void emitMarkdown(NSMutableString *result, NSString *normalizedString, NS
 	
 	return image;
 #endif
+}
+
+- (NSString *)stringRepresentation
+{
+	// renders a string like "━━━━ • ━━━━" or "──── · ────"
+	
+	NSString *result = @"";
+	
+	NSInteger width = self.width;
+	if (self.hasSpaces) {
+		width = width - 3;
+	}
+	if (self.hasPadding) {
+		width = width - 2;
+	}
+	if (width < 3) {
+		width = 3;
+	}
+	NSInteger halfWidth = width / 2;
+	
+	NSString *character = @"─";
+	NSString *dot = @"·";
+	if (self.thickness == 2.0) {
+		character = @"━";
+		dot = @"•";
+	}
+	if (self.hasSpaces) {
+		NSString *divider = [@"" stringByPaddingToLength:halfWidth withString:character startingAtIndex:0];
+		result = [NSString stringWithFormat:@"%@ %@ %@", divider, dot, divider];
+	}
+	else {
+		result = [@"" stringByPaddingToLength:width withString:character startingAtIndex:0];
+	}
+	if (self.hasPadding) {
+		result = [NSString stringWithFormat:@"  %@", result];
+	}
+	
+	return result;
+}
+
+- (NSString *)markdownRepresentation
+{
+	NSString *result = @"";
+	
+	NSInteger width = self.width;
+	if (self.hasSpaces) {
+		width = width - 3;
+	}
+	if (self.hasPadding) {
+		width = width - 2;
+	}
+	if (width < 3) {
+		width = 3;
+	}
+	NSInteger halfWidth = width / 2;
+	
+	NSString *character = @"-";
+	if (self.thickness == 2.0) {
+		character = @"*";
+	}
+	if (self.hasSpaces) {
+		NSString *divider = [@"" stringByPaddingToLength:halfWidth withString:character startingAtIndex:0];
+		result = [NSString stringWithFormat:@"%@ %@ %@", divider, character, divider];
+	}
+	else {
+		result = [@"" stringByPaddingToLength:width withString:character startingAtIndex:0];
+	}
+	if (self.hasPadding) {
+		result = [NSString stringWithFormat:@"  %@", result];
+	}
+	
+	return result;
 }
 
 #pragma mark - NSSecureCoding

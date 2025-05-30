@@ -128,6 +128,9 @@ extern MarkdownStyleKey MarkdownStyleLink;							// optional attribute dictionar
 @property (nonatomic, assign, readonly) BOOL hasSpaces;		// "* * *" or "--- - ---"
 @property (nonatomic, assign, readonly) NSInteger width;	// "***" = 3, "-----" = 5, "-- - --" = 7
 
+@property (nonatomic, readonly) NSString *stringRepresentation;
+@property (nonatomic, readonly) NSString *markdownRepresentation;
+
 @end
 
 NS_ASSUME_NONNULL_END

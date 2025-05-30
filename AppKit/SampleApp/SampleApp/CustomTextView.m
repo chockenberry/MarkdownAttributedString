@@ -288,12 +288,17 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 
 #pragma mark - Utility
 
-- (NSAttributedString *)matchingAttributedString:(NSAttributedString *)attributedString
+- (NSAttributedString *)matchingAttributedString:(NSAttributedString *)attributedString processBlockElements:(BOOL)processBlockElements
 {
 	NSString *markdownString = [attributedString markdownRepresentation];
-	NSAttributedString *result = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes];
+	NSAttributedString *result = [[NSAttributedString alloc] initWithMarkdownRepresentation:markdownString baseAttributes:self.baseAttributes styleAttributes:self.styleAttributes processBlockElements:processBlockElements];
 	
 	return result;
+}
+
+- (NSAttributedString *)matchingAttributedString:(NSAttributedString *)attributedString
+{
+	return [self matchingAttributedString:attributedString processBlockElements:YES];
 }
 
 - (NSAttributedString *)matchingString:(NSString *)string
@@ -337,9 +342,6 @@ NSString *const UTTypeTot = @"com.iconfactory.tot";
 	BOOL result = NO;
 
 	NSAttributedString *matchingAttributedString = [self matchingAttributedString:attributedString];
-	
-	NSDictionary<NSAttributedStringKey, id> *linkTextAttributes = self.linkTextAttributes;
-	NSColor *linkColor = linkTextAttributes[NSForegroundColorAttributeName] ?: NSColor.linkColor;
 
 	// NOTE: The range is checked to ensure that text attachments are surrounded by newlines
 	if (matchingAttributedString.length > 0) {

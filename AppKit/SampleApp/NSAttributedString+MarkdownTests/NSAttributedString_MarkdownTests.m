@@ -77,6 +77,13 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	return [checkString isEqual:testString];
 }
 
+static BOOL checkMarkdownResult(NSString *testString, NSString *resultString)
+{
+	NSAttributedString *attributedTestString = [[NSAttributedString alloc] initWithMarkdownRepresentation:testString attributes:@{ NSFontAttributeName: [NSFont systemFontOfSize:12.0] }];
+	NSString *checkString = [attributedTestString markdownRepresentation];
+	return [checkString isEqual:resultString];
+}
+
 - (void)testPlainText
 {
 	NSString *testString = @"Test plain text";
@@ -282,7 +289,7 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	NSString *compareString = @"[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2-[\\n](  )[\U0000fffc](  )-2PS-[\\n](  )[\U0000fffc](  )-2S-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1-[\\n](  )[\U0000fffc](  )-1PS-[\\n](  )[\U0000fffc](  )-1S-[\\n](  )[\U0000fffc](  )-1P-[\\n](  )";
 	XCTAssert(checkMarkdownToRichTextWithBlockElements(testString1, compareString), @"Markdown to rich text with text attachments test failed");
 	
-	// NOTE: Horizontal rules are normalized, so the arbitrary input in testString1 cannot be reused here.
+	// NOTE: Horizontal rules are normalized (e.g. "___" becomes "---", so the arbitrary input in testString1 cannot be reused here.
 	NSString *testString2 = @"* * *\n***\n*****\n  * * *\n  *** * ***\n- - -\n---\n  -----\n  ---- - ----\n";
 	XCTAssert(checkMarkdownRoundTripWithBlockElements(testString2), @"Round-trip test failed");
 }
@@ -295,7 +302,10 @@ static BOOL checkMarkdownRoundTrip(NSString *testString)
 	NSString *testString = @"* * *\n***\n*****\n  *  *  *  \n*** ***\n_ _ _\n___\n_____\n  _ _ _ \n___ ___\n---\n";
 	NSString *compareString = @"[* * *\\n***\\n*****\\n  *  *  *  \\n*** ***\\n_ _ _\\n___\\n_____\\n  _ _ _ \\n___ ___\\n---\\n](  )";
 	XCTAssert(checkMarkdownToRichText(testString, compareString), @"Markdown to rich text test failed");
-	XCTAssert(checkMarkdownRoundTrip(testString), @"Round-trip test failed");
+	
+	// NOTE: Horizontal rules are escaped, so this tests that the escapes are correct.
+	NSString *checkString = @"\\* \\* \\*\n\\*\\*\\*\n\\*\\*\\*\\*\\*\n  \\*  \\*  \\*  \n\\*\\*\\* \\*\\*\\*\n\\_ \\_ \\_\n\\_\\_\\_\n\\_\\_\\_\\_\\_\n  \\_ \\_ \\_ \n\\_\\_\\_ \\_\\_\\_\n\\-\\-\\-\n";
+	XCTAssert(checkMarkdownResult(testString, checkString), @"Result test failed");
 }
 
 - (void)testForPeopleWhoDoMarkdownWrong
